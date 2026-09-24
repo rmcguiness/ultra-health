@@ -87,6 +87,21 @@ APP_VARIANT=development npx expo run:ios
 Then open **Settings → Seed simulator data** to write 120 days of synthetic data, including a
 simulated illness three weeks ago, into the Simulator's HealthKit store.
 
+### Simulator (your own export, read-only)
+
+To check screens against your real history, export from the iPhone (**Health → profile picture
+→ Export All Health Data**), unzip it to `data/apple_health_export/`, then:
+
+```bash
+BACKTEST_FRESH=1 pnpm --filter @ultra-health/mobile backtest   # sync the export on the Mac
+SIM_DEVICE=<udid> pnpm --filter @ultra-health/mobile sim:snapshot
+```
+
+The app then opens that database read-only, treats the export's last day as today, and never
+reads the Simulator's HealthKit, so synthetic and real data cannot mix. A yellow line on Today
+says a snapshot is loaded. `sim:snapshot --remove` goes back to the Simulator's own data. The
+snapshot is hard-gated off physical devices, and it stays on this Mac (`data/` is git-ignored).
+
 ### Your iPhone (real data)
 
 HealthKit data only exists on your phone, so this is where the app becomes useful.

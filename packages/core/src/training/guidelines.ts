@@ -28,6 +28,17 @@ export const WHO_STRENGTH_DAYS = 2;
 /** A session must hold at least moderate intensity this long to count as training. */
 const QUALIFYING_MINUTES = 10;
 
+/**
+ * A real training session: at least 10 minutes at moderate or higher heart
+ * rate, the same bar the maintenance minimum uses. A stroll that stays
+ * light is everyday activity, not a session to plan around.
+ */
+export function isTrainingSession(s: TrainingSession): boolean {
+  return (
+    s.load !== undefined && s.load.minutes.moderate + s.load.minutes.vigorous >= QUALIFYING_MINUTES
+  );
+}
+
 export type AerobicStatus = 'below' | 'meets' | 'extended';
 
 export interface ActivityWeek {
@@ -71,8 +82,10 @@ export function activityWeek(
   sessions: readonly TrainingSession[],
   asOf: LocalDate,
   exerciseMinutes?: DenseSeries,
+  /** Window length; the morning plan uses the 6 days before today. */
+  days = 7,
 ): ActivityWeek {
-  const from = addDays(asOf, -6);
+  const from = addDays(asOf, -(days - 1));
   const week = sessions.filter((s) => s.date >= from && s.date <= asOf);
 
   let moderate = 0;
@@ -92,7 +105,7 @@ export function activityWeek(
       unmeasured++;
       continue;
     }
-    if (aerobic && s.load.minutes.moderate + s.load.minutes.vigorous >= QUALIFYING_MINUTES) {
+    if (aerobic && isTrainingSession(s)) {
       qualifying++;
     }
     moderate += s.load.minutes.moderate;

@@ -30,6 +30,8 @@ export interface SummaryRow {
   /** "Improving", "Up 21%", "Steady". */
   readonly verdict: string;
   readonly detail: string | undefined;
+  /** When the last 6 weeks point a different way from the whole range. */
+  readonly note?: string;
   /** Good or bad only where the direction has one meaning (fitness markers). */
   readonly tone: 'positive' | 'warning' | 'secondary' | 'tertiary';
   /** The chart behind the row, when there is one. */
@@ -41,7 +43,7 @@ const AEROBIC: Readonly<
   Record<AerobicVerdict, { verdict: string; direction?: Direction; tone: SummaryRow['tone'] }>
 > = {
   gaining: { verdict: 'Improving', direction: 'up', tone: 'positive' },
-  holding: { verdict: 'Holding steady', direction: 'flat', tone: 'secondary' },
+  holding: { verdict: 'Steady', direction: 'flat', tone: 'secondary' },
   slipping: { verdict: 'Slipping', direction: 'down', tone: 'warning' },
   mixed: { verdict: 'Mixed signals', tone: 'secondary' },
   insufficient_data: { verdict: 'Not enough data', tone: 'tertiary' },
@@ -56,6 +58,9 @@ const MARKER_SHORT: Readonly<Record<FitnessMarker, { label: string; unit: string
 
 const signed = (v: number, digits = 1) =>
   `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(digits)}`;
+
+/** The window of the fitness verdict on Today. */
+const RECENT_DAYS = 42;
 
 /** Below this relative change, a fitness-score difference reads as "about the same". */
 const LOAD_FLAT = 0.05;
@@ -80,6 +85,25 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
     (m) => (m.verdict === 'improving' || m.verdict === 'declining') && m.change !== undefined,
   );
   const a = AEROBIC[aerobic.verdict];
+  // Today's tile reads the last 6 weeks. When this range says something
+  // else, say both, so the two screens never seem to disagree.
+  const recent =
+    days === RECENT_DAYS
+      ? aerobic
+      : aerobicTrend(
+          {
+            vo2_max: series.vo2max,
+            walking_hr: series.walkingHr,
+            resting_hr: series.restingHr,
+            hr_recovery: series.hrRecovery,
+          },
+          to,
+          RECENT_DAYS,
+        );
+  const note =
+    recent.verdict !== aerobic.verdict && recent.verdict !== 'insufficient_data'
+      ? `Last 6 weeks: ${AEROBIC[recent.verdict].verdict.toLowerCase()}`
+      : undefined;
   rows.push({
     id: 'fitness',
     label: 'Cardio fitness',
@@ -96,6 +120,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
         : aerobic.verdict === 'holding'
           ? 'No marker moved beyond its day-to-day noise'
           : undefined,
+    note,
     tone: a.tone,
     metric: series.vo2max ? 'vo2_max' : undefined,
     evidence: aerobic.evidence,

@@ -1,4 +1,5 @@
 import {
+  backgroundDailyLoad,
   projectPlan,
   sessionLoadProfile,
   sessionsForFitness,
@@ -7,7 +8,7 @@ import {
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { loadSeries } from '@/analytics/analyze';
+import { loadSeries, typicalSessionLoad } from '@/analytics/analyze';
 import type { AnalyticsInputs } from '@/analytics/inputs';
 import { today } from '@/features/queries';
 import { ProjectionChart } from '@/ui/charts/ProjectionChart';
@@ -32,6 +33,9 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
   const date = today();
   const profile = useMemo(() => sessionLoadProfile(inputs.sessions, date), [inputs, date]);
   const points = useMemo(() => loadSeries(inputs), [inputs]);
+  const usual = useMemo(() => typicalSessionLoad(inputs, date), [inputs, date]);
+  // Walks and other light workouts carry on under any plan.
+  const background = useMemo(() => backgroundDailyLoad(inputs.sessions, date), [inputs, date]);
   const last = points[points.length - 1];
   const [sessions, setSessions] = useState(3);
   const [intensity, setIntensity] = useState<PlanIntensity>('typical');
@@ -39,12 +43,19 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
   const outcome = useMemo(
     () =>
       profile && last
-        ? projectPlan(last, inputs.dailyLoad, {
-            sessionsPerWeek: sessions,
-            sessionLoad: profile[intensity],
-          })
+        ? projectPlan(
+            last,
+            inputs.dailyLoad,
+            {
+              sessionsPerWeek: sessions,
+              sessionLoad: profile[intensity],
+              backgroundDailyLoad: background,
+            },
+            28,
+            usual,
+          )
         : undefined,
-    [profile, last, inputs.dailyLoad, sessions, intensity],
+    [profile, last, inputs.dailyLoad, sessions, intensity, usual, background],
   );
 
   if (!profile || !last || !outcome) {
@@ -53,16 +64,22 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
         <View style={styles.stack}>
           <CardHeader title="What if…" topic="planner" />
           <Text tone="secondary">
-            The planner works in sessions like yours, so it needs at least 6 workouts with heart
-            rate in the last 90 days.
+            The planner works in sessions like yours, so it needs at least 6 training sessions (10+
+            minutes at moderate effort or harder) in the last 90 days.
           </Text>
         </View>
       </Card>
     );
   }
 
-  const hold = sessionsForFitness(last.fitness, last.fitness, profile.typical);
-  const build = sessionsForFitness(last.fitness, last.fitness * 1.1, profile.typical);
+  const hold = sessionsForFitness(last.fitness, last.fitness, profile.typical, 28, background);
+  const build = sessionsForFitness(
+    last.fitness,
+    last.fitness * 1.1,
+    profile.typical,
+    28,
+    background,
+  );
   const relForm =
     last.fitness > 0 ? outcome.finalForm / Math.max(1, outcome.projection.at(-1)?.fitness ?? 1) : 0;
   const formLabel = relForm >= 0.2 ? 'fresh' : relForm <= -0.2 ? 'carrying fatigue' : 'balanced';
@@ -73,7 +90,7 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
       <View style={styles.stack}>
         <CardHeader title="What if…" topic="planner" />
         <View style={styles.rowBetween}>
-          <Text variant="headline">Sessions a week</Text>
+          <Text variant="headline">Training sessions a week</Text>
           <View style={styles.stepper}>
             <Step
               label="−"

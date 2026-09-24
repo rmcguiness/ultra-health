@@ -6,7 +6,9 @@ import type { IllnessWatch } from '../recovery/illness';
 import { planToday, weeklyInsights } from '../recommend/plan';
 import { dense, gaussian } from '../testUtils';
 import { fitnessFatigue } from '../training/fitnessFatigue';
+import { fitnessAtRisk } from '../training/detraining';
 import { activityWeek, type TrainingSession } from '../training/guidelines';
+import { loadRamp } from '../training/ramp';
 import { addDays } from '../time/dates';
 import { adaptationState } from './adaptationState';
 import { scorecard } from './scorecard';
@@ -39,15 +41,35 @@ describe('aerobicTrend', () => {
     expect(t.verdict).toBe('gaining');
   });
 
-  it('catches detraining in walking HR before anything else moves', () => {
-    const t = aerobicTrend(
+  it('needs VO₂max or two heart-rate markers to call a direction', () => {
+    // Walking HR alone rising (heat, terrain) is shown, but does not decide.
+    const alone = aerobicTrend(
       {
         walking_hr: trendSeries(180, 100, 0.15, 1.5, 4),
         resting_hr: trendSeries(180, 58, 0, 1.2, 5),
       },
       date,
     );
-    expect(t.verdict).toBe('slipping');
+    expect(alone.markers.find((m) => m.marker === 'walking_hr')?.verdict).toBe('declining');
+    expect(alone.verdict).toBe('holding');
+    // Two heart-rate markers agreeing do.
+    const both = aerobicTrend(
+      {
+        walking_hr: trendSeries(180, 100, 0.15, 1.5, 4),
+        resting_hr: trendSeries(180, 58, 0.1, 1.2, 5),
+      },
+      date,
+    );
+    expect(both.verdict).toBe('slipping');
+    // VO₂max alone does.
+    const vo2 = aerobicTrend(
+      {
+        vo2_max: trendSeries(180, 45, -0.05, 0.4, 9),
+        resting_hr: trendSeries(180, 58, 0, 1.2, 5),
+      },
+      date,
+    );
+    expect(vo2.verdict).toBe('slipping');
   });
 
   it('holds on noise and reports insufficient data with one marker', () => {
@@ -233,7 +255,7 @@ describe('planToday', () => {
     });
     expect(p.primary).toBe('strength');
     expect(p.alternatives).toContain('hard_aerobic');
-    expect(p.reasons[0]?.summary).toBe('No strength training in the last 7 days.');
+    expect(p.reasons[0]?.summary).toBe('No strength training yet this week.');
   });
 
   it('spaces strength sessions 48 h apart', () => {
@@ -253,19 +275,70 @@ describe('planToday', () => {
     expect(p.reasons[0]?.summary).toMatch(/last hard session/);
   });
 
-  it('warns about a fast two-week ramp', () => {
-    const dailyTrimp = Array.from({ length: 28 }, (_, i) => ({
+  it('warns about a fast two-week ramp above the maintenance dose', () => {
+    const dailyLoad = Array.from({ length: 28 }, (_, i) => ({
       date: addDays('2026-02-11', i),
       load: i < 14 ? 30 : 50,
     }));
     const insights = weeklyInsights({
       date: '2026-03-10',
       week,
-      dailyTrimp,
+      ramp: loadRamp(dailyLoad, '2026-03-10', 60),
       aerobic: { date, windowDays: 42, verdict: 'gaining', markers: [], evidence: [] },
-      weeksBelowMaintenance: 0,
+      fitnessAtRisk: false,
     });
     expect(insights.map((i) => i.id)).toContain('fast_ramp');
+    expect(insights.find((i) => i.id === 'fast_ramp')?.text).toMatch(/67% more/);
+  });
+
+  it('never calls the first sessions back a dangerous ramp', () => {
+    // Two quiet weeks, then two usual sessions a week: +300% by ratio, but
+    // exactly the maintenance dose the app recommends.
+    const dailyLoad = Array.from({ length: 28 }, (_, i) => ({
+      date: addDays('2026-02-11', i),
+      load: i < 14 ? (i === 3 ? 60 : 0) : [15, 18, 22, 25].includes(i) ? 60 : 0,
+    }));
+    const ramp = loadRamp(dailyLoad, '2026-03-10', 60);
+    expect(ramp.recent).toBe(240);
+    expect(ramp.base).toBe(240);
+    expect(ramp.fast).toBe(false);
+    expect(loadRamp(dailyLoad, '2026-03-10', undefined).fast).toBe(false);
+  });
+
+  it('keeps a fast ramp out of the plan', () => {
+    const p = planToday({
+      date,
+      readiness: ready,
+      illness: quiet,
+      state: maintaining,
+      week: activityWeek(
+        [
+          ...sessions,
+          {
+            date: '2026-03-06',
+            startMs: 0,
+            activityType: 50,
+            durationMinutes: 45,
+            load: undefined,
+          },
+          {
+            date: '2026-03-08',
+            startMs: 0,
+            activityType: 50,
+            durationMinutes: 45,
+            load: undefined,
+          },
+        ],
+        '2026-03-09',
+      ),
+      sessions,
+      fastRamp: true,
+    });
+    expect(p.primary).not.toBe('hard_aerobic');
+    expect(p.alternatives).not.toContain('hard_aerobic');
+    expect(p.reasons.map((r) => r.summary)).toContain(
+      'Load rose fast lately, so no hard session today.',
+    );
   });
 });
 
@@ -339,5 +412,24 @@ describe('scorecard', () => {
       cardio_fitness_trend: 'improving',
       sleep_regularity: 'unknown',
     });
+  });
+});
+
+describe('fitnessAtRisk', () => {
+  const base = {
+    weeksBelowMaintenance: 10,
+    meetsWhoMinimum: false,
+    fitnessImproving: false,
+    rampingUp: false,
+  };
+  it('warns only when training stopped and nothing says otherwise', () => {
+    expect(fitnessAtRisk(base)).toBe(true);
+    expect(fitnessAtRisk({ ...base, weeksBelowMaintenance: 1 })).toBe(false);
+    expect(fitnessAtRisk({ ...base, weeksBelowMaintenance: undefined })).toBe(false);
+    // Still meeting the WHO minimum through daily activity is not stopping.
+    expect(fitnessAtRisk({ ...base, meetsWhoMinimum: true })).toBe(false);
+    expect(fitnessAtRisk({ ...base, fitnessImproving: true })).toBe(false);
+    // Load already rising: rebuilding, not detraining.
+    expect(fitnessAtRisk({ ...base, rampingUp: true })).toBe(false);
   });
 });

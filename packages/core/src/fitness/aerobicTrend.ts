@@ -148,19 +148,31 @@ export function aerobicTrend(
   });
 
   const informative = markers.filter((m) => m.verdict !== 'insufficient_data');
-  const improving = informative.filter((m) => m.verdict === 'improving').length;
-  const declining = informative.filter((m) => m.verdict === 'declining').length;
+  const improving = informative.filter((m) => m.verdict === 'improving');
+  const declining = informative.filter((m) => m.verdict === 'declining');
+  // VO₂max measures the engine itself; heart-rate markers are indirect and
+  // move with heat, hydration, sleep and stress too (Buchheit 2014). So one
+  // heart-rate marker alone does not decide the verdict: it takes VO₂max or
+  // two markers agreeing.
+  const decisive = (moved: readonly MarkerTrend[]) =>
+    moved.length >= 2 || moved.some((m) => m.marker === 'vo2_max');
 
+  // The decisive side wins over a lone heart-rate marker on the other side;
+  // "mixed" only when both sides are decisive, or both are single markers.
+  const up = decisive(improving);
+  const down = decisive(declining);
   const verdict: AerobicVerdict =
     informative.length < 2
       ? 'insufficient_data'
-      : improving > 0 && declining === 0
-        ? 'gaining'
-        : declining > 0 && improving === 0
-          ? 'slipping'
-          : improving > 0 && declining > 0
-            ? 'mixed'
-            : 'holding';
+      : up && down
+        ? 'mixed'
+        : up
+          ? 'gaining'
+          : down
+            ? 'slipping'
+            : improving.length > 0 && declining.length > 0
+              ? 'mixed'
+              : 'holding';
 
   return {
     date,

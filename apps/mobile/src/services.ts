@@ -1,6 +1,9 @@
 import { METRIC_IDS, METRICS } from '@ultra-health/core';
 
+import type { LocalDate } from '@ultra-health/core';
+
 import { destroyDatabase, getDatabase, type Database } from '@/db/client';
+import { openSnapshot } from '@/dev/snapshot';
 import { createHealthKitSource } from '@/health/healthkit';
 import type { HealthDataSource } from '@/health/types';
 import { SyncEngine } from '@/sync/engine';
@@ -9,6 +12,8 @@ export interface Services {
   readonly db: Database;
   readonly health: HealthDataSource;
   readonly engine: SyncEngine;
+  /** Simulator only: a read-only snapshot of a Health export is loaded. */
+  readonly snapshotAsOf: LocalDate | undefined;
 }
 
 let services: Promise<Services> | undefined;
@@ -16,10 +21,11 @@ let services: Promise<Services> | undefined;
 /** Lazily wires the app's singletons. Safe to call from anywhere. */
 export function getServices(): Promise<Services> {
   services ??= (async () => {
-    const db = await getDatabase();
-    const health = createHealthKitSource();
+    const snapshot = await openSnapshot();
+    const db = snapshot?.db ?? (await getDatabase());
+    const health = snapshot?.health ?? createHealthKitSource();
     const engine = new SyncEngine({ health, db: db.writer });
-    return { db, health, engine };
+    return { db, health, engine, snapshotAsOf: snapshot?.asOf };
   })().catch((error: unknown) => {
     services = undefined;
     throw error;

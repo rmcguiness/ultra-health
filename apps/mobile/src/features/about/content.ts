@@ -16,7 +16,7 @@ import {
   MARKER_VERDICT,
   PILLAR_LABEL,
   PILLAR_STATUS,
-  READINESS_COPY,
+  readinessView,
   SESSION_COPY,
   STATE_COPY,
   targetSummary,
@@ -127,7 +127,7 @@ function planContent(o: Outlook): AboutContent {
     meaning: plan.reasons.map((r) => r.text),
     method: [
       'Safety comes first. If overnight signals look like illness, the plan is rest. If HRV is below your normal range, or recent load is far above what you are used to, the day is kept easy, as in the HRV-guided training trials.',
-      `Otherwise the plan fills the biggest gap in your week against the WHO targets (${WHO_AEROBIC_MINIMUM} moderate or 75 vigorous minutes, and strength on 2+ days). Hard sessions, and strength sessions for the same muscles, are kept 48 hours apart.`,
+      `Otherwise the plan fills the biggest gap in your week against the WHO targets (${WHO_AEROBIC_MINIMUM} moderate or 75 vigorous minutes, and strength on 2+ days). The week is the 6 days before today plus today, the same days the checklist counts. Hard sessions, and strength sessions for the same muscles, are kept 48 hours apart, and there is no hard session while load is rising more than 30% in two weeks.`,
       'Heart-rate targets use your heart rate reserve, the span from resting to maximum. Moderate is 40–59% of it and vigorous starts at 60%. Resting HR is your 30-day median; maximum is the second-highest value seen in your workouts, or 208 − 0.7 × age if that is higher.',
       'Session length is your median session of that type over the last 90 days, never below the guideline minimum: 30 minutes for moderate cardio, 20 for vigorous. The interval option is the 4 × 4 protocol, which raised VO₂max more than steady running of the same total work.',
     ],
@@ -142,7 +142,7 @@ function planContent(o: Outlook): AboutContent {
 
 function recoveryContent(o: Outlook): AboutContent {
   const { readiness, illness, hrvKind } = o.day;
-  const copy = READINESS_COPY[readiness.status];
+  const copy = readinessView(readiness);
   const band = readiness.hrvBand;
   const facts: Fact[] = [
     { label: 'Status', value: `${copy.glyph} ${copy.label}`, tone: copy.tone },
@@ -175,7 +175,7 @@ function recoveryContent(o: Outlook): AboutContent {
     ),
     method: [
       'HRV is compared as a 7-day average, on a log scale, against a band of ±0.5 standard deviations around your own 60-day baseline. Single mornings are too noisy to act on; a weekly average needs at least 3 readings.',
-      'Inside or above the band: train as planned. Below it: keep the day easy. In trials, training this way improved fitness at least as much as following a fixed plan.',
+      'Inside the band: a hard session fits. Above it: train as planned but skip the hard session, because in well-trained people a high HRV can mean saturation rather than freshness. Below it: keep the day easy. In trials, training this way improved fitness at least as much as following a fixed plan.',
       'Resting heart rate is checked against its own baseline the same way. The illness watch needs two signals (resting HR, breathing rate, wrist temperature, HRV) past your personal limits before it alerts.',
     ],
     evidence: unique([...readiness.evidence, ...illness.evidence]),
@@ -383,7 +383,7 @@ function detrainingContent(o: Outlook): AboutContent {
       'The loss figure comes from trained athletes who stopped completely, so treat it as an upper bound.',
     ],
     method: [
-      'A week meets maintenance with at least 2 aerobic sessions holding 10+ minutes at moderate or harder, and 1 strength day. This warning appears after 2 weeks below that, and only if you met it at some point in the last 6 months.',
+      'A week meets maintenance with at least 2 aerobic sessions holding 10+ minutes at moderate or harder, and 1 strength day. This warning needs all of: 2+ weeks below that (after meeting it at some point in the last 6 months), last week’s activity also under the WHO minimum, fitness markers not improving, and load not already rising. Someone still meeting the WHO minimum through daily activity has not stopped training, so the detraining research does not apply to them.',
     ],
     evidence: d?.evidence ?? ['spiering2021', 'coyle1984'],
   };
@@ -416,6 +416,7 @@ function rampContent(o: Outlook): AboutContent {
     meaning: [ramp?.text ?? 'Training load rose more than 30% over two weeks.'],
     method: [
       'Compares the last 14 days of training load with the 14 days before. Above +30%, novice runners had more overuse injuries; no ramp rate has been proven safe, so build gradually.',
+      'A ratio with a small starting point flags any training at all, so the comparison never starts below the maintenance dose the app recommends: 2 of your usual sessions a week. Coming back after a quiet spell is not a warning until you go past that.',
     ],
     evidence: ramp?.evidence ?? ['nielsen2014', 'buist2008'],
   };
@@ -456,7 +457,8 @@ const PLANNER: AboutContent = {
     'Try a number of sessions a week and a session size, and see where your fitness would be in 4 weeks. It compares plans with each other; it does not promise a number.',
   ],
   method: [
-    'Easier, typical and harder are the lower quarter, middle and upper quarter of your own session loads over the last 90 days, so a plan uses sessions like the ones you already do.',
+    'A training session is one with 10+ minutes at moderate effort or harder, the same bar as the maintenance check. Easier, typical and harder are the lower quarter, middle and upper quarter of your own training sessions’ loads over the last 90 days, so a plan uses sessions like the ones you already do.',
+    'Walks and other light workouts are not sessions to plan around: their average daily load over the last 4 weeks carries on under every plan, as it does in real life.',
     'The projection runs the same fitness–fatigue model as the timeline. Personal time constants are uncertain, so small differences between plans are not meaningful.',
     'A warning appears when the plan would raise load more than 30% over two weeks, a pace linked to more overuse injuries in novice runners.',
   ],

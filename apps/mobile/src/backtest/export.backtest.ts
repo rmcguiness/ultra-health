@@ -15,7 +15,9 @@ import { resolve } from 'node:path';
 
 import {
   addDays,
+  aerobicTrend,
   daysBetween,
+  fitnessAtRisk,
   deviationOn,
   enumerateDates,
   localDateKey,
@@ -34,7 +36,9 @@ import {
   analyzeRange,
   chooseHrv,
   loadSeries,
+  meetsWhoOver4Weeks,
   outlook,
+  weeksBelowMaintenance,
   type DailyAnalysis,
 } from '@/analytics/analyze';
 import { loadAnalyticsInputs, type AnalyticsProfile } from '@/analytics/inputs';
@@ -357,6 +361,64 @@ describe.skipIf(!existsSync(EXPORT))('back-test on the Apple Health export', () 
     say('');
     say(`Adaptation states: ${tally((d) => d.state.state)}`);
     say(`Plan (primary): ${tally((d) => d.plan.primary)}`);
+
+    // Warnings that used to contradict each other, under the old and new rules.
+    const markers = {
+      vo2_max: series.vo2max,
+      walking_hr: series.walkingHr,
+      resting_hr: series.restingHr,
+      hr_recovery: series.hrRecovery,
+    };
+    let oldRamp = 0;
+    let oldRisk = 0;
+    let oldBoth = 0;
+    let newRamp = 0;
+    let newRisk = 0;
+    let newBoth = 0;
+    let horizonsDisagree = 0;
+    let horizonDays = 0;
+    const verdicts = new Map<string, number>();
+    for (const d of days) {
+      const yesterday = addDays(d.date, -1);
+      const sumLoad = (from: LocalDate, to: LocalDate) =>
+        inputs.dailyLoad
+          .filter((l) => l.date >= from && l.date <= to)
+          .reduce((a, l) => a + l.load, 0);
+      const recent = sumLoad(addDays(yesterday, -13), yesterday);
+      const prior = sumLoad(addDays(yesterday, -27), addDays(yesterday, -14));
+      const rampOld = prior > 0 && recent > prior * 1.3;
+      const below = weeksBelowMaintenance(inputs, d.date);
+      const riskOld = below !== undefined && below >= 2;
+      const aerobic = aerobicTrend(markers, d.date);
+      verdicts.set(aerobic.verdict, (verdicts.get(aerobic.verdict) ?? 0) + 1);
+      const riskNew = fitnessAtRisk({
+        weeksBelowMaintenance: below,
+        meetsWhoMinimum: meetsWhoOver4Weeks(inputs, d.date),
+        fitnessImproving: aerobic.verdict === 'gaining',
+        rampingUp: d.ramp.fast,
+      });
+      oldRamp += Number(rampOld);
+      oldRisk += Number(riskOld);
+      oldBoth += Number(rampOld && riskOld);
+      newRamp += Number(d.ramp.fast);
+      newRisk += Number(riskNew);
+      newBoth += Number(d.ramp.fast && riskNew);
+      const longer = aerobicTrend(markers, d.date, 91);
+      if (aerobic.verdict !== 'insufficient_data' && longer.verdict !== 'insufficient_data') {
+        horizonDays++;
+        if (aerobic.verdict !== longer.verdict) horizonsDisagree++;
+      }
+    }
+    say('Warnings (share of days), old rule → new rule:');
+    say(`  load rising > 30%:        ${pct(oldRamp, days.length)} → ${pct(newRamp, days.length)}`);
+    say(`  fitness at risk:          ${pct(oldRisk, days.length)} → ${pct(newRisk, days.length)}`);
+    say(`  both at once:             ${pct(oldBoth, days.length)} → ${pct(newBoth, days.length)}`);
+    say(
+      `Fitness verdict (6 weeks): ${[...verdicts].map(([k, v]) => `${k} ${pct(v, days.length)}`).join(', ')}`,
+    );
+    say(
+      `  6-week and 3-month verdicts differ on ${pct(horizonsDisagree, horizonDays)} of days with both (Trends then shows both)`,
+    );
     const weeks = days.filter((_, i) => i % 7 === 0);
     say(
       `WHO aerobic status (weekly): ${['below', 'meets', 'extended'].map((s) => `${s} ${pct(weeks.filter((d) => d.week.aerobicStatus === s).length, weeks.length)}`).join(', ')}`,

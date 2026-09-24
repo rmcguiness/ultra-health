@@ -13,7 +13,8 @@
     "lint": "expo lint",
     "test": "vitest run",
     "doctor": "expo-doctor",
-    "backtest": "vitest run --config vitest.backtest.config.mts"
+    "backtest": "vitest run --config vitest.backtest.config.mts",
+    "sim:snapshot": "bash scripts/sim-snapshot.sh"
   },
   "dependencies": {
     "@kingstinct/react-native-healthkit": "^16.0.0",

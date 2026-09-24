@@ -17,7 +17,7 @@ import {
   intervalSummary,
   PILLAR_LABEL,
   PILLAR_STATUS,
-  READINESS_COPY,
+  readinessView,
   SESSION_COPY,
   targetSummary,
   WHAT_WORKED_COPY,
@@ -35,10 +35,15 @@ export function Alerts({ outlook }: { outlook: O }) {
   const router = useRouter();
   const open = (topic: 'illness' | 'detraining' | 'ramp') =>
     router.push({ pathname: '/about/[topic]', params: { topic } });
-  const { illness } = outlook.day;
-  const d = outlook.detraining;
-  const ramp = outlook.weeklyInsights.some((i) => i.id === 'fast_ramp');
-  if (!illness.alert && !d && !ramp) return null;
+  const { illness, ramp } = outlook.day;
+  // Illness outranks everything: nothing else matters until it clears. The
+  // core rules already keep "load rising" and "fitness at risk" apart.
+  const d = illness.alert ? undefined : outlook.detraining;
+  const rampPct =
+    !illness.alert && ramp.fast && ramp.ratio !== undefined
+      ? Math.round((ramp.ratio - 1) * 100)
+      : undefined;
+  if (!illness.alert && !d && rampPct === undefined) return null;
   return (
     <View style={styles.stack}>
       {illness.alert ? (
@@ -59,12 +64,12 @@ export function Alerts({ outlook }: { outlook: O }) {
           onPress={() => open('detraining')}
         />
       ) : null}
-      {ramp ? (
+      {rampPct !== undefined ? (
         <Banner
           tone="warning"
           glyph="!"
-          title="Training load rose over 30% in two weeks"
-          detail="Build gradually to lower the risk of overuse injury."
+          title={`Training load up ${rampPct}% in two weeks`}
+          detail="Hold here for a week before adding more."
           onPress={() => open('ramp')}
         />
       ) : null}
@@ -82,7 +87,7 @@ export function PlanHero({ outlook }: { outlook: O }) {
   const target = targetSummary(primary);
   const intervals = intervalSummary(primary);
   const why = plan.reasons[0]?.summary;
-  const r = READINESS_COPY[readiness.status];
+  const r = readinessView(readiness);
   const band = readiness.hrvBand;
   const ms = (ln: number) => Math.round(Math.exp(ln));
 
@@ -117,7 +122,7 @@ export function PlanHero({ outlook }: { outlook: O }) {
           </Text>
           <Text variant="caption" tone="secondary" style={styles.flexRight}>
             {band
-              ? `HRV ${ms(band.recent)} ms · normal ${ms(band.lower)}–${ms(band.upper)}`
+              ? `${ms(band.recent)} ms (${ms(band.lower)}–${ms(band.upper)})`
               : 'Needs 3 HRV readings a week'}
           </Text>
           <Chevron />
@@ -179,6 +184,9 @@ export function WeekCard({ outlook }: { outlook: O }) {
             {left === 0 ? '✓ All done' : `${left} to go`}
           </Text>
         </CardHeader>
+        <Text variant="footnote" tone="tertiary">
+          The last 7 days, today included
+        </Text>
         {steps.map((s) => (
           <StepRow
             key={s.id}
@@ -203,7 +211,7 @@ const TILE_LABEL: Partial<Record<keyof typeof PILLAR_LABEL, string>> = {
   aerobic_activity: 'Cardio',
   muscle_strengthening: 'Strength',
   sleep_regularity: 'Regularity',
-  cardio_fitness_trend: 'Fitness',
+  cardio_fitness_trend: 'Fitness · 6 wk',
 };
 
 function tileValue(p: O['scorecard']['pillars'][number]): string {
@@ -257,7 +265,7 @@ export function ScorecardCard({ outlook }: { outlook: O }) {
           })}
         </View>
         <Text variant="footnote" tone="tertiary">
-          4-week averages · tap a tile for the target and why it matters
+          Averages over 4 weeks; fitness is its 6-week trend. Tap a tile for the target.
         </Text>
       </View>
     </Card>

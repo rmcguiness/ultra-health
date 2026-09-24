@@ -141,8 +141,14 @@ alert days showed reduced movement, as real sick days do.
 - Maintenance (spiering2021): ≥ 2 aerobic sessions/week that each hold ≥ 10 min at moderate
   or higher heart rate, and ≥ 1 strength session. Intensity is the variable that must be kept
   (hickson1985), so a stroll does not qualify.
-- After 2+ weeks below it, the outlook projects VO₂max along the complete-cessation curve of
-  trained athletes: −7% by day 21, −16% by day 56 (coyle1984). It is labelled an upper bound.
+- The outlook projects VO₂max along the complete-cessation curve of trained athletes: −7% by
+  day 21, −16% by day 56 (coyle1984), labelled an upper bound. It is shown only when all of
+  these hold (`fitnessAtRisk`, grade C): 2+ weeks below maintenance, after meeting it at some
+  point in the last 6 months; the 4-week average below the WHO minimum, because someone still
+  meeting it through daily activity has not stopped (bull2020); fitness markers not
+  improving, since they measure directly what the curve only predicts; and load not already
+  ramping up. On the January export this cut the warning from 67% of days to 17%, and it never
+  appears together with the ramp warning (26% of days before).
 
 ### Aerobic fitness trend
 
@@ -150,9 +156,16 @@ alert days showed reduced movement, as real sick days do.
 - Theil–Sen slope with Sen's 90% interval over 42 days (sen1968). A marker moves only when the
   interval excludes zero **and** the change exceeds one reading's typical error, SD(Δ)/√2
   (hopkins2000).
-- Verdict: gaining / slipping when markers move one way only, mixed when they disagree,
-  holding otherwise. Walking HR is the early detraining signal (coyle1986); VO₂max is read as
-  a trend only (caserman2024).
+- Verdict (grade C): VO₂max measures the engine itself, while the heart-rate markers are
+  indirect and also move with heat, hydration, sleep and stress (buchheit2014). So a side is
+  decisive when it includes VO₂max or two markers. Gaining / slipping when one side is
+  decisive and the other is not; mixed when both are, or when two single markers disagree;
+  holding otherwise. A lone walking-HR rise (the early detraining signal, coyle1986) still
+  shows in the marker list but no longer flips the verdict. VO₂max is read as a trend only
+  (caserman2024).
+- Horizons: Today's tile reads 6 weeks; the Trends summary reads its range. When the last 6
+  weeks disagree with the range (58% of days with both on the January export), the Trends row
+  says so ("Last 6 weeks: slipping") instead of appearing to contradict Today.
 - Projection: the fitted line extended with slope-interval bounds, framed "if the current
   trend continues".
 - The same test (`seriesTrend`) drives the Trends summary over 3, 6 or 12 months: the
@@ -266,19 +279,30 @@ How long and how hard, in the user's own numbers (`recommend/targets.ts`):
   least 3 nights have data (watson2015). The cardio gap is expressed as sessions of the user's
   usual length, never under 30 minutes.
 
-Weekly insights: aerobic or strength gap to WHO; a > 30% two-week load increase (associated
-with overuse injury in novice runners, nielsen2014; the 10% rule itself did not prevent
-injuries in an RCT, buist2008); a 6-week plateau while meeting guidelines (raise the dose:
-montero2017); 2+ weeks below the maintenance minimum (spiering2021).
+The plan counts the 6 days before today; with today's session that is the rolling week the
+checklist counts, so the two never disagree about what is done.
+
+Load ramp (`training/ramp.ts`, grade C): the last 14 days against a base that is the largest
+of the prior 14 days (the > 30% comparison linked to overuse injury in novice runners,
+nielsen2014; the 10% rule did not prevent injuries in an RCT, buist2008), your median 14-day
+load over the 6 months before, and two weeks of the maintenance dose in your usual sessions.
+A bare ratio flags any training after a quiet spell and a return to normal after an easy
+fortnight (impellizzeri2020); the floors stop both, and the app never warns about load it
+recommends. No ramp is called without 6 sessions with heart rate in 6 months. While it is
+flagged, the plan offers no hard session. On the January export this cut the flag from 43% of
+days to 21%.
+
+Weekly insights: aerobic or strength gap to WHO; the load ramp above; a 6-week plateau while
+meeting guidelines (raise the dose: montero2017); fitness at risk (see the maintenance section).
 
 ## Predictions
 
-| Question                   | Method                                                                                                                                                                                                                                                                                      | Framing                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Where is my weight going?  | Kalman forecast, level and reading intervals                                                                                                                                                                                                                                                | "If nothing changes", intervals widen with horizon                                                        |
-| What if I train like this? | Planner (`training/planner.ts`): sessions per week × session size (the 25th/50th/75th percentile of your own last 90 days of TRIMP), spread evenly through the week and run through the fitness–fatigue model for 4 weeks; also solves the sessions needed to hold fitness or build it ~10% | Compares plans; constants shown (morton1990, hellard2006). Flags a > 30% two-week load rise (nielsen2014) |
-| Is my engine improving?    | Theil–Sen projection of each marker; VO₂max projection shown only when its trend is real                                                                                                                                                                                                    | "If the current trend continues"                                                                          |
-| What if I stop?            | Coyle 1984 detraining curve from the current VO₂max, only for someone who met the maintenance minimum in the last 6 months                                                                                                                                                                  | Upper bound                                                                                               |
+| Question                   | Method                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Framing                                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Where is my weight going?  | Kalman forecast, level and reading intervals                                                                                                                                                                                                                                                                                                                                                                                                                                             | "If nothing changes", intervals widen with horizon                                                        |
+| What if I train like this? | Planner (`training/planner.ts`): training sessions per week (10+ min at moderate or harder, as in the maintenance check) × session size (the 25th/50th/75th percentile of your own training sessions' TRIMP over 90 days), spread evenly through the week, on top of your everyday activity (the average daily load of walks and other light workouts over 4 weeks), run through the fitness–fatigue model for 4 weeks; also solves the sessions needed to hold fitness or build it ~10% | Compares plans; constants shown (morton1990, hellard2006). Flags a > 30% two-week load rise (nielsen2014) |
+| Is my engine improving?    | Theil–Sen projection of each marker; VO₂max projection shown only when its trend is real                                                                                                                                                                                                                                                                                                                                                                                                 | "If the current trend continues"                                                                          |
+| What if I stop?            | Coyle 1984 detraining curve from the current VO₂max, only for someone who met the maintenance minimum in the last 6 months                                                                                                                                                                                                                                                                                                                                                               | Upper bound                                                                                               |
 
 Deliberately not predicted: injury risk (no validated model), race performance, calories
 burned (wrist estimates miss by > 20%, shcherbina2017).

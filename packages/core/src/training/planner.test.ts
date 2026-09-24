@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { addDays } from '../time/dates';
 import { fitnessFatigue } from './fitnessFatigue';
 import type { TrainingSession } from './guidelines';
-import { projectPlan, sessionLoadProfile, sessionsForFitness, weeklySchedule } from './planner';
+import {
+  backgroundDailyLoad,
+  projectPlan,
+  sessionLoadProfile,
+  sessionsForFitness,
+  weeklySchedule,
+} from './planner';
 
 const TODAY = '2026-09-24';
 
@@ -71,5 +77,44 @@ describe('projectPlan', () => {
     // Steady state: fitness ≈ 200/7 per day, so ~2 sessions of 100 hold it.
     expect(sessionsForFitness(200 / 7, 200 / 7, 100)).toBeCloseTo(2, 5);
     expect(sessionsForFitness(200 / 7, (200 / 7) * 1.1, 100)).toBeGreaterThan(2);
+  });
+});
+
+describe('plans in real training sessions', () => {
+  const session = (daysAgo: number, trimp: number, moderate: number): TrainingSession => ({
+    date: addDays(TODAY, -daysAgo),
+    startMs: 0,
+    activityType: moderate > 0 ? 37 : 52,
+    durationMinutes: 40,
+    load: {
+      trimp,
+      minutes: { light: 40 - moderate, moderate, vigorous: 0 },
+      durationMinutes: 40,
+      coveredMinutes: 40,
+      method: 'heart_rate_series',
+    },
+  });
+  // A daily light walk (TRIMP 10) and a real run every few days (TRIMP 60).
+  const sessions = [
+    ...Array.from({ length: 28 }, (_, i) => session(i, 10, 0)),
+    ...[1, 4, 8, 11, 15, 18, 22, 25].map((d) => session(d, 60, 35)),
+  ];
+
+  it('sizes sessions from training only, not the walks', () => {
+    expect(sessionLoadProfile(sessions, TODAY)?.typical).toBe(60);
+  });
+
+  it('keeps everyday activity under the plan', () => {
+    expect(backgroundDailyLoad(sessions, TODAY)).toBeCloseTo(10);
+    // Holding a fitness of 30 needs 210 a week; walks give 70, so 140 = 2.3 runs.
+    expect(sessionsForFitness(30, 30, 60, 28, 10)).toBeCloseTo(140 / 60, 1);
+    const last = { date: TODAY, load: 0, fitness: 30, fatigue: 30, form: 0 };
+    const withWalks = projectPlan(last, [], {
+      sessionsPerWeek: 2,
+      sessionLoad: 60,
+      backgroundDailyLoad: 10,
+    });
+    const without = projectPlan(last, [], { sessionsPerWeek: 2, sessionLoad: 60 });
+    expect(withWalks.fitnessChange).toBeGreaterThan(without.fitnessChange);
   });
 });

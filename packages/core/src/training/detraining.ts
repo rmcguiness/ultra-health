@@ -61,3 +61,29 @@ export function detrainingOutlook(input: {
     evidence: ['coyle1984', 'coyle1986', 'spiering2021'],
   };
 }
+
+/**
+ * Should the app warn that fitness is at risk? Only when all four agree:
+ *
+ * 1. 2+ weeks without the maintenance minimum (Spiering 2021);
+ * 2. activity also below the WHO minimum in the last week, because the
+ *    detraining curve describes stopping, and someone still meeting the
+ *    WHO minimum has not stopped (Bull 2020);
+ * 3. the fitness markers are not improving, since they measure directly
+ *    what the curve only predicts;
+ * 4. load is not already ramping up: that person is rebuilding.
+ */
+export function fitnessAtRisk(input: {
+  readonly weeksBelowMaintenance: number | undefined;
+  readonly meetsWhoMinimum: boolean;
+  readonly fitnessImproving: boolean;
+  readonly rampingUp: boolean;
+}): boolean {
+  return (
+    input.weeksBelowMaintenance !== undefined &&
+    input.weeksBelowMaintenance >= 2 &&
+    !input.meetsWhoMinimum &&
+    !input.fitnessImproving &&
+    !input.rampingUp
+  );
+}

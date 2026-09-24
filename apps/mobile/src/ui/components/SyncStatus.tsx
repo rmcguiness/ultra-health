@@ -1,6 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
+import { snapshotDate } from '@/dev/snapshot';
 import { useSyncStore } from '@/sync/store';
+import { formatDay } from '@/ui/charts/model';
 
 import { colors, radii, spacing } from '../theme';
 import { formatCount, formatRelative } from '../format';
@@ -9,6 +11,15 @@ import { Text } from './Text';
 /** Compact banner: live progress while syncing, last result otherwise. */
 export function SyncStatus() {
   const { status, progress, lastReport, error } = useSyncStore();
+
+  const snapshot = snapshotDate();
+  if (snapshot) {
+    return (
+      <Text variant="caption" tone="warning">
+        Simulator snapshot of your Health export, as of {formatDay(snapshot, snapshot)}
+      </Text>
+    );
+  }
 
   if (status === 'syncing' && progress) {
     const fraction = progress.total > 0 ? (progress.index + 1) / progress.total : 0;

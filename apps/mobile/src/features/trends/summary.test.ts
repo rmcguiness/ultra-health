@@ -44,8 +44,23 @@ describe('trendSummary', () => {
       TO,
       91,
     );
-    expect(rows.find((r) => r.id === 'fitness')?.verdict).toBe('Holding steady');
+    expect(rows.find((r) => r.id === 'fitness')?.verdict).toBe('Steady');
     expect(rows.find((r) => r.id === 'hrv')?.direction).toBe('flat');
+  });
+
+  it('says so when the last 6 weeks disagree with the range', () => {
+    // Improving for months, then VO₂max falls over the last 6 weeks.
+    const rows = trendSummary(
+      inputs({
+        vo2max: series((i) => (i < 250 ? 40 + i * 0.03 : 47.5 - (i - 250) * 0.06), 0.3, 11),
+        restingHr: series((i) => 60 - Math.min(i, 250) * 0.02, 0.8, 12),
+      }),
+      TO,
+      182,
+    );
+    const fitness = rows.find((r) => r.id === 'fitness')!;
+    expect(fitness.verdict).toBe('Improving');
+    expect(fitness.note).toBe('Last 6 weeks: slipping');
   });
 
   it('leaves out rows without data', () => {

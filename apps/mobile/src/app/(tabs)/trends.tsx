@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTimeline } from '@/features/analytics';
-import { READINESS_COPY, STATE_COPY } from '@/features/today/copy';
+import { readinessView, STATE_COPY } from '@/features/today/copy';
 import { barcode, timelineModel } from '@/features/trends/model';
 import { PlannerCard } from '@/features/trends/PlannerCard';
 import { trendSummary, type SummaryRow } from '@/features/trends/summary';
@@ -150,10 +150,10 @@ export default function Trends() {
           <Card>
             <View style={styles.stack}>
               <CardHeader title="Training and recovery" topic="timeline" />
-              <Text variant="caption" numberOfLines={1}>
+              <Text variant="caption" numberOfLines={2}>
                 {focusDate ? formatDay(focusDate, data.to) : ''}
                 {focus
-                  ? ` · ${STATE_COPY[focus.state.state].label} · ${READINESS_COPY[focus.readiness.status].label}`
+                  ? ` · ${STATE_COPY[focus.state.state].label} · ${readinessView(focus.readiness).label}`
                   : ''}
                 {selected === undefined ? (
                   <Text variant="caption" tone="tertiary">
@@ -208,6 +208,11 @@ function SummaryLine({ row, first }: { row: SummaryRow; first: boolean }) {
         {row.detail ? (
           <Text variant="caption" tone="tertiary">
             {row.detail}
+          </Text>
+        ) : null}
+        {row.note ? (
+          <Text variant="caption" tone="secondary">
+            {row.note}
           </Text>
         ) : null}
       </View>

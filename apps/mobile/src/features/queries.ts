@@ -26,6 +26,7 @@ import {
   type SleepNight,
 } from '@/db/queries';
 import { listStreamStates } from '@/db/syncState';
+import { snapshotDate } from '@/dev/snapshot';
 import { getServices } from '@/services';
 import {
   dailyChart,
@@ -49,8 +50,9 @@ const reader = async () => (await getServices()).db.reader;
 
 const minDate = (a: LocalDate, b: LocalDate) => (a < b ? a : b);
 
+/** The local date, or a loaded simulator snapshot's last day. */
 export function today(): LocalDate {
-  return localDateKey(Date.now());
+  return snapshotDate() ?? localDateKey(Date.now());
 }
 
 export function useInventory() {

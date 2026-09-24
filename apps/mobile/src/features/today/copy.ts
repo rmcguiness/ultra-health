@@ -8,6 +8,7 @@ import {
   type MarkerVerdict,
   type PillarId,
   type PillarStatus,
+  type Readiness,
   type ReadinessStatus,
   type SessionKind,
   type SessionTarget,
@@ -36,9 +37,26 @@ export const READINESS_COPY: Readonly<
 > = {
   ready: { label: 'Recovered', glyph: '✓', tone: 'positive' },
   normal: { label: 'Normal', glyph: '–', tone: 'secondary' },
-  hold_back: { label: 'Below normal', glyph: '!', tone: 'warning' },
+  hold_back: { label: 'HRV below your range', glyph: '!', tone: 'warning' },
   insufficient_data: { label: 'Learning your HRV', glyph: '…', tone: 'tertiary' },
 };
+
+/**
+ * The recovery line on Today and Trends. "Normal" covers two different
+ * mornings in the readiness rule (HRV above its range, or HRV fine but
+ * resting HR up), so each gets its own words.
+ */
+export function readinessView(r: Readiness): { label: string; glyph: string; tone: ToneName } {
+  if (r.status === 'normal') {
+    if (r.hrvBand && r.hrvBand.recent > r.hrvBand.upper) {
+      return { label: 'HRV above your range', glyph: '↑', tone: 'secondary' };
+    }
+    if (r.contributors.some((c) => c.signal === 'resting_hr' && c.effect === 'against')) {
+      return { label: 'Resting HR raised', glyph: '!', tone: 'warning' };
+    }
+  }
+  return READINESS_COPY[r.status];
+}
 
 export const STATE_COPY: Readonly<Record<AdaptationStateId, { label: string; tone: ToneName }>> = {
   possible_illness: { label: 'Possibly fighting something', tone: 'negative' },
@@ -69,7 +87,7 @@ export const MARKER_LABEL: Readonly<Record<FitnessMarker, string>> = {
 
 export const MARKER_VERDICT: Readonly<Record<MarkerVerdict, string>> = {
   improving: 'improving',
-  declining: 'declining',
+  declining: 'slipping',
   steady: 'steady',
   insufficient_data: 'not enough data',
 };
@@ -91,7 +109,7 @@ export const PILLAR_STATUS: Readonly<
   not_met: { label: 'Not met', glyph: '✕', tone: 'negative' },
   improving: { label: 'Improving', glyph: '↑', tone: 'positive' },
   steady: { label: 'Steady', glyph: '→', tone: 'secondary' },
-  declining: { label: 'Declining', glyph: '↓', tone: 'warning' },
+  declining: { label: 'Slipping', glyph: '↓', tone: 'warning' },
   unknown: { label: 'No data', glyph: '…', tone: 'tertiary' },
 };
 

@@ -53,7 +53,7 @@ async function deleteDatabaseFiles(): Promise<void> {
   }
 }
 
-function adapt(db: SQLiteDatabase): SqlDatabase {
+export function adaptConnection(db: SQLiteDatabase): SqlDatabase {
   return {
     execAsync: (sql) => db.execAsync(sql),
     runAsync: async (sql, params = []) => ({ changes: (await db.runAsync(sql, params)).changes }),
@@ -116,14 +116,14 @@ export function getDatabase(): Promise<Database> {
     if (created) await deleteDatabaseFiles();
 
     const writerConnection = await openWriter(key);
-    const writer = adapt(writerConnection);
+    const writer = adaptConnection(writerConnection);
     const migration = await migrate(writer);
     if (migration.from !== migration.to) logger.info('db.migrated', migration);
 
     const readerConnection = await openConnection(key, true);
     return {
       writer,
-      reader: adapt(readerConnection),
+      reader: adaptConnection(readerConnection),
       async close() {
         await readerConnection.closeAsync();
         await writerConnection.closeAsync();

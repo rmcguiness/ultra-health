@@ -30,7 +30,12 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     if (get().status === 'syncing') return;
     set({ status: 'syncing', error: undefined });
     try {
-      const { engine } = await getServices();
+      const { engine, snapshotAsOf } = await getServices();
+      // A read-only snapshot has nothing to sync.
+      if (snapshotAsOf) {
+        set((s) => ({ status: 'idle', dataVersion: s.dataVersion + 1 }));
+        return;
+      }
       const report = await engine.run({
         onProgress: (progress) => set({ progress }),
         onStreamComplete: (result) => {

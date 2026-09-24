@@ -8,7 +8,8 @@ import {
   type DailyLoad,
   type FitnessFatiguePoint,
 } from './fitnessFatigue';
-import type { TrainingSession } from './guidelines';
+import { isTrainingSession, type TrainingSession } from './guidelines';
+import { FAST_RAMP } from './ramp';
 
 export type PlanIntensity = 'easy' | 'typical' | 'hard';
 
@@ -24,8 +25,10 @@ const MIN_SESSIONS = 6;
 
 /**
  * "Easy", "typical" and "hard" mean the 25th, 50th and 75th percentile of
- * your own session loads over the last 90 days, so a plan is expressed in
- * sessions like the ones you already do.
+ * your own training sessions' loads over the last 90 days, so a plan is
+ * expressed in sessions like the ones you already do. Only real training
+ * counts (`isTrainingSession`): if daily walks were logged as workouts, a
+ * "typical session" would otherwise be a walk.
  */
 export function sessionLoadProfile(
   sessions: readonly TrainingSession[],
@@ -34,7 +37,7 @@ export function sessionLoadProfile(
 ): SessionLoadProfile | undefined {
   const from = addDays(asOf, -(days - 1));
   const loads = sessions
-    .filter((s) => s.date >= from && s.date <= asOf && s.load && s.load.trimp > 0)
+    .filter((s) => s.date >= from && s.date <= asOf && isTrainingSession(s) && s.load!.trimp > 0)
     .map((s) => s.load!.trimp);
   if (loads.length < MIN_SESSIONS) return undefined;
   return {
@@ -43,6 +46,26 @@ export function sessionLoadProfile(
     hard: quantile(loads, 0.75)!,
     sessions: loads.length,
   };
+}
+
+/**
+ * Average daily load from everything that is not a training session (walks
+ * and other light workouts) over the last 28 days. A plan changes your
+ * training; this everyday activity carries on underneath it.
+ */
+export function backgroundDailyLoad(
+  sessions: readonly TrainingSession[],
+  asOf: LocalDate,
+  days = 28,
+): number {
+  const from = addDays(asOf, -(days - 1));
+  return (
+    sum(
+      sessions
+        .filter((s) => s.date >= from && s.date <= asOf && s.load && !isTrainingSession(s))
+        .map((s) => s.load!.trimp),
+    ) / days
+  );
 }
 
 /** Training days spread evenly through a week, e.g. 3 → Mon, Wed, Fri. */
@@ -60,14 +83,12 @@ export interface PlanOutcome {
   readonly fitnessChangePct: number | undefined;
   readonly finalForm: number;
   readonly plannedWeeklyLoad: number;
-  /** Planned load over the next 14 days ÷ actual load over the last 14. */
+  /** Planned load over the next 14 days ÷ the base: the last 14 days, floored at maintenance. */
   readonly rampRatio: number | undefined;
-  /** More than 30% up over two weeks (Nielsen 2014). */
+  /** More than 30% up over two weeks (Nielsen 2014), by the same rule as `loadRamp`. */
   readonly fastRamp: boolean;
   readonly evidence: readonly CitationId[];
 }
-
-const FAST_RAMP = 0.3;
 
 /**
  * What the fitness–fatigue model (Morton 1990) expects if you train this way
@@ -77,11 +98,22 @@ const FAST_RAMP = 0.3;
 export function projectPlan(
   last: FitnessFatiguePoint,
   recent: readonly DailyLoad[],
-  plan: { readonly sessionsPerWeek: number; readonly sessionLoad: number },
+  plan: {
+    readonly sessionsPerWeek: number;
+    readonly sessionLoad: number;
+    /** Everyday activity that continues on every day (`backgroundDailyLoad`). */
+    readonly backgroundDailyLoad?: number;
+  },
   days = 28,
+  /** Your usual session load; the ramp base never drops below 2 of these a week. */
+  typicalSessionLoad?: number,
 ): PlanOutcome {
   const schedule = weeklySchedule(plan.sessionsPerWeek);
-  const loads = Array.from({ length: days }, (_, i) => (schedule[i % 7] ? plan.sessionLoad : 0));
+  const background = plan.backgroundDailyLoad ?? 0;
+  const loads = Array.from(
+    { length: days },
+    (_, i) => background + (schedule[i % 7] ? plan.sessionLoad : 0),
+  );
   const projection = projectFitnessFatigue(last, loads);
   const end = projection[projection.length - 1] ?? last;
 
@@ -90,7 +122,8 @@ export function projectPlan(
     recent.filter((l) => l.date >= since && l.date <= last.date).map((l) => l.load),
   );
   const planned14 = sum(loads.slice(0, 14));
-  const rampRatio = recent14 > 0 ? planned14 / recent14 : undefined;
+  const base = Math.max(recent14, typicalSessionLoad === undefined ? 0 : 4 * typicalSessionLoad);
+  const rampRatio = base > 0 ? planned14 / base : undefined;
 
   return {
     projection,
@@ -100,22 +133,24 @@ export function projectPlan(
     plannedWeeklyLoad: sum(loads.slice(0, 7)),
     rampRatio,
     fastRamp: rampRatio !== undefined && rampRatio > 1 + FAST_RAMP,
-    evidence: ['morton1990', 'hellard2006', 'nielsen2014'],
+    evidence: ['morton1990', 'hellard2006', 'nielsen2014', 'impellizzeri2020'],
   };
 }
 
 /**
- * Sessions a week, at a given session load, that move fitness to `target`
- * in `days` days. At steady state fitness equals the average daily load, so
- * holding it needs weekly load = 7 × fitness.
+ * Training sessions a week, at a given session load, that move fitness to
+ * `target` in `days` days, on top of your everyday activity. At steady
+ * state fitness equals the average daily load, so holding it needs weekly
+ * load = 7 × fitness, part of which the background already supplies.
  */
 export function sessionsForFitness(
   current: number,
   target: number,
   sessionLoad: number,
   days = 28,
+  backgroundDailyLoad = 0,
 ): number {
   if (sessionLoad <= 0) return Number.POSITIVE_INFINITY;
   const daily = dailyLoadForFitness(current, target, days, DEFAULT_FITNESS_DAYS);
-  return Math.max(0, (daily * 7) / sessionLoad);
+  return Math.max(0, ((daily - backgroundDailyLoad) * 7) / sessionLoad);
 }
