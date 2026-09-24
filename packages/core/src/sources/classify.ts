@@ -1,3 +1,5 @@
+import type { MetricCategory } from '../metrics/types';
+
 /**
  * Where a reading physically came from. Analyses must respect this: two
  * devices reporting the "same" metric often measure different things (e.g.
@@ -35,6 +37,8 @@ const SMART_SCALE_VENDORS = [
 const APPLE_MANUAL_ENTRY_BUNDLE = 'com.apple.health';
 const APPLE_DEVICE_BUNDLE_PREFIX = 'com.apple.health.';
 const APPLE_CLOCK_BUNDLE = 'com.apple.mobiletimer';
+/** Ultra Health itself (and its `.dev` variant): it only writes what the user types in. */
+const OWN_APP_BUNDLE_PREFIX = 'com.ryanmcguiness.ultrahealth';
 
 export function classifySource(source: SourceIdentity): SourceKind {
   const bundle = source.bundleId.toLowerCase();
@@ -45,8 +49,10 @@ export function classifySource(source: SourceIdentity): SourceKind {
   const productType = source.productType ?? '';
   if (productType.startsWith('Watch') || source.deviceModel === 'Watch') return 'apple_watch';
 
-  // Samples typed into the Health app itself.
-  if (bundle === APPLE_MANUAL_ENTRY_BUNDLE) return 'manual';
+  // Samples typed into the Health app, or into Ultra Health's measurement sheet.
+  if (bundle === APPLE_MANUAL_ENTRY_BUNDLE || bundle.startsWith(OWN_APP_BUNDLE_PREFIX)) {
+    return 'manual';
+  }
 
   // Apple's own iPhone sources only. A third-party app's product type is the
   // iPhone it runs on (a scale app reports `iPhone17,1`), so product type says
@@ -82,3 +88,30 @@ export const SOURCE_PRIORITY: readonly SourceKind[] = [
   'third_party_app',
   'manual',
 ];
+
+/** Days with at least one reading from a source kind, within the range being analyzed. */
+export interface SourceKindDays {
+  readonly kind: SourceKind;
+  readonly days: number;
+}
+
+/**
+ * The one source kind a series is drawn from. Sensor metrics follow
+ * `SOURCE_PRIORITY`, because two devices "measuring" HRV or resting HR
+ * measure different things. Body measurements differ: every scale and tape
+ * reads the same quantity, and one stray entry from a higher-priority source
+ * (a weight saved by the Watch) must not hide a scale's whole history. So for
+ * body composition the kind with the most days of readings wins, and the
+ * priority only breaks ties.
+ */
+export function chooseSourceKind(
+  category: MetricCategory,
+  kinds: readonly SourceKindDays[],
+): SourceKind | undefined {
+  const present = kinds.filter((k) => k.days > 0);
+  const rank = (kind: SourceKind) => SOURCE_PRIORITY.indexOf(kind);
+  if (category === 'body_composition') {
+    return [...present].sort((a, b) => b.days - a.days || rank(a.kind) - rank(b.kind))[0]?.kind;
+  }
+  return SOURCE_PRIORITY.find((kind) => present.some((k) => k.kind === kind));
+}

@@ -40,7 +40,7 @@ steep.
 
 ## Phase A · Body data you can trust (level 3 foundation)
 
-- [ ] **A1 Source choice for body metrics.** `primarySourceKind` picks the kind with the most
+- [x] **A1 Source choice for body metrics.** `primarySourceKind` picks the kind with the most
       days for body-composition metrics; Ultra Health's own entries classify as `manual`.
       Tests for both. Back-test shows the Wyze weigh-ins.
 - [ ] **A2 Waist circumference.** Catalog entry (`waist_circumference`, HealthKit
@@ -128,3 +128,5 @@ backtest`, then `SIM_DEVICE=<udid> pnpm --filter @ultra-health/mobile sim:snapsh
 
 - 2026-09-24: plan written after a page-by-page review; the scale-source bug found on the
   real export (1 of 83 weigh-in days visible to the analysis).
+- 2026-09-24: A1 done. The back-test now reads 83 weigh-in days (was 1); the water/tissue
+  split passes its gate on this export.

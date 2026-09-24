@@ -1,6 +1,7 @@
 import {
   aggregate,
   ASLEEP_STAGES,
+  chooseSourceKind,
   METRIC_IDS,
   METRICS,
   SOURCE_PRIORITY,
@@ -113,17 +114,20 @@ function pickByPriority(kinds: Iterable<SourceKind>): SourceKind | undefined {
   return SOURCE_PRIORITY.find((kind) => present.has(kind));
 }
 
+/** The one source kind a metric's series is drawn from in this range (`chooseSourceKind`). */
 export async function primarySourceKind(
   db: SqlDatabase,
   metric: MetricDefinition,
   range: DateRange,
 ): Promise<SourceKind | undefined> {
-  const rows = await db.getAllAsync<{ kind: SourceKind }>(
-    `SELECT DISTINCT s.kind AS kind FROM quantity_samples q JOIN sources s ON s.id = q.source_id
-     WHERE q.metric = ? AND q.local_date BETWEEN ? AND ?`,
+  const rows = await db.getAllAsync<{ kind: SourceKind; days: number }>(
+    `SELECT s.kind AS kind, COUNT(DISTINCT q.local_date) AS days
+     FROM quantity_samples q JOIN sources s ON s.id = q.source_id
+     WHERE q.metric = ? AND q.local_date BETWEEN ? AND ?
+     GROUP BY s.kind`,
     [metric.id, range.from, range.to],
   );
-  return pickByPriority(rows.map((r) => r.kind));
+  return chooseSourceKind(metric.category, rows);
 }
 
 const SQL_AGGREGATES: Partial<Record<MetricDefinition['dailyAggregation'], string>> = {

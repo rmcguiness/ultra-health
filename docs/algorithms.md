@@ -21,7 +21,12 @@ The research brief behind it is [`research/adaptation-signals.html`](research/ad
    history: a 60-day window ending 7 days before the day in question, summarized by median
    and 1.4826 × MAD (`recovery/deviation.ts`).
 3. **Never blend sources.** Apple SDNN ≠ Whoop RMSSD; Apple daytime resting HR ≠ Whoop
-   sleeping resting HR. Every series comes from one source kind.
+   sleeping resting HR. Every series comes from one source kind: for sensor metrics the first
+   present in priority order (Apple Watch, Whoop, smart scale, iPhone, other apps, manual);
+   for body measurements the kind with the most days of readings in the range, priority only
+   breaking ties (`chooseSourceKind`). Every scale and tape reads the same quantity, and one
+   stray Watch weight entry used to hide 83 days of smart-scale weigh-ins on the developer's
+   export. Entries typed into Ultra Health count as manual.
 4. **Gaps are not zeros.** Missing days are `null` in `DenseSeries`. The one exception is
    training load, where a day without a workout is a rest day.
 5. **Uncertainty is part of the answer.** Trends carry intervals, forecasts widen with
