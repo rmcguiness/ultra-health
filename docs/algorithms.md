@@ -209,9 +209,11 @@ any volume:
 
 ### What worked for you (personal response finder)
 
-- History is cut into non-overlapping 28-day blocks. Features per block: sessions, aerobic
-  sessions, strength days, WHO-equivalent and vigorous minutes, TRIMP/day, sleep hours, SRI,
-  steps.
+- History is cut into non-overlapping 28-day blocks. Features per block: sessions, cardio
+  training sessions (10+ min at moderate or harder, as in the maintenance check), strength
+  days, WHO-equivalent and vigorous minutes, TRIMP/day, sleep hours, SRI, steps. Cardio
+  minutes are counted week by week exactly as the checklist and the Cardio tile count them
+  (Exercise minutes set a floor for moderate), so the "now" value matches the tile.
 - Outcome: each marker's change from the 14 days before the block to its last 14 days,
   corrected for regression to the mean by regressing change on the pre-block level across
   blocks (barnett2005), standardized, direction-aligned and averaged.

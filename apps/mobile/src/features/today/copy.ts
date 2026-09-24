@@ -117,7 +117,7 @@ export const FEATURE_LABEL: Readonly<Record<FeatureId, string>> = {
   sessionsPerWeek: 'Workouts per week',
   aerobicSessionsPerWeek: 'Cardio sessions per week',
   strengthDaysPerWeek: 'Strength days per week',
-  equivalentMinutesPerWeek: 'Aerobic minutes per week',
+  equivalentMinutesPerWeek: 'Cardio minutes per week',
   vigorousMinutesPerWeek: 'Vigorous minutes per week',
   trimpPerDay: 'Training load per day',
   sleepHours: 'Sleep per night',
@@ -139,7 +139,11 @@ export function formatFeature(feature: FeatureId, v: number): string {
       return `${v.toFixed(1)} h`;
     case 'stepsPerDay':
       return Math.round(v).toLocaleString('en-US');
+    case 'equivalentMinutesPerWeek':
+    case 'vigorousMinutesPerWeek':
+      return `${Math.round(v)} min`;
     case 'sleepRegularity':
+    case 'trimpPerDay':
       return String(Math.round(v));
     default:
       return v.toFixed(1);

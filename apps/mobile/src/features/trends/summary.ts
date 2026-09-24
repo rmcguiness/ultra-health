@@ -32,6 +32,7 @@ export interface SummaryRow {
   readonly detail: string | undefined;
   /** When the last 6 weeks point a different way from the whole range. */
   readonly note?: string;
+  readonly noteTone?: 'positive' | 'warning' | 'secondary';
   /** Good or bad only where the direction has one meaning (fitness markers). */
   readonly tone: 'positive' | 'warning' | 'secondary' | 'tertiary';
   /** The chart behind the row, when there is one. */
@@ -104,6 +105,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
     recent.verdict !== aerobic.verdict && recent.verdict !== 'insufficient_data'
       ? `Last 6 weeks: ${AEROBIC[recent.verdict].verdict.toLowerCase()}`
       : undefined;
+  const noteTone = note ? AEROBIC[recent.verdict].tone : undefined;
   rows.push({
     id: 'fitness',
     label: 'Cardio fitness',
@@ -121,6 +123,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
           ? 'No marker moved beyond its day-to-day noise'
           : undefined,
     note,
+    noteTone: noteTone === 'tertiary' ? 'secondary' : noteTone,
     tone: a.tone,
     metric: series.vo2max ? 'vo2_max' : undefined,
     evidence: aerobic.evidence,
@@ -172,7 +175,10 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
         direction: t.direction === 'rising' ? 'up' : t.direction === 'falling' ? 'down' : 'flat',
         verdict:
           t.direction === 'rising' ? 'Rising' : t.direction === 'falling' ? 'Falling' : 'Steady',
-        detail: `${signed(pct * 100, 0)}% across the range`,
+        detail:
+          t.direction === 'flat'
+            ? `${signed(pct * 100, 0)}%, within its day-to-day noise`
+            : `${signed(pct * 100, 0)}% across the range`,
         tone: 'secondary',
         metric: 'hrv_sdnn',
         evidence: ['sen1968', 'hopkins2000', 'plews2013'],

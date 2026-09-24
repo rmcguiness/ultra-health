@@ -3,7 +3,7 @@ import { valuesBetween, type DenseSeries } from '../series/daily';
 import { sleepRegularityIndex, type AsleepInterval } from '../sleep/regularity';
 import { mean, median, quantile, standardDeviation } from '../stats/descriptive';
 import { isMuscleStrengthening, workoutFamily } from '../training/activityTypes';
-import type { TrainingSession } from '../training/guidelines';
+import { activityWeek, isTrainingSession, type TrainingSession } from '../training/guidelines';
 import { addDays, daysBetween, type LocalDate } from '../time/dates';
 
 /** What a block of training looked like, in per-week or per-day terms. */
@@ -39,6 +39,8 @@ export interface BlockInputs {
   readonly sleepDates?: readonly LocalDate[] | undefined;
   readonly sleepHours?: DenseSeries | undefined;
   readonly steps?: DenseSeries | undefined;
+  /** Apple Exercise minutes, credited the same way as the weekly checklist. */
+  readonly exerciseMinutes?: DenseSeries | undefined;
   readonly markers: Readonly<Partial<Record<OutcomeMarker, DenseSeries>>>;
 }
 
@@ -66,12 +68,24 @@ export function blockFeatures(
   let aerobic = 0;
   for (const s of inBlock) {
     const family = workoutFamily(s.activityType);
-    if (family === 'endurance' || family === 'intervals' || family === 'sport') aerobic++;
+    // Cardio sessions are real training (10+ min at moderate or harder), as
+    // in the maintenance check and the planner; a logged stroll is not one.
+    const isAerobic = family === 'endurance' || family === 'intervals' || family === 'sport';
+    if (isAerobic && isTrainingSession(s)) aerobic++;
     if (!s.load) continue;
     moderate += s.load.minutes.moderate;
     vigorous += s.load.minutes.vigorous;
     trimp += s.load.trimp;
   }
+  // Cardio minutes: week by week exactly as the checklist and the Cardio
+  // tile count them (Exercise minutes set a floor for moderate), so "now"
+  // here matches the tile. Blocks that are not whole weeks use one total.
+  const equivalentMinutes =
+    days % 7 === 0
+      ? Array.from({ length: days / 7 }, (_, k) =>
+          activityWeek(inputs.sessions, addDays(end, -7 * k), inputs.exerciseMinutes),
+        ).reduce((a, w) => a + w.equivalentMinutes, 0)
+      : undefined;
   const sleep = inputs.sleepHours ? mean(valuesBetween(inputs.sleepHours, start, end)) : undefined;
   const steps = inputs.steps ? mean(valuesBetween(inputs.steps, start, end)) : undefined;
   const sri =
@@ -86,7 +100,7 @@ export function blockFeatures(
     sessionsPerWeek: inBlock.length / weeks,
     aerobicSessionsPerWeek: aerobic / weeks,
     strengthDaysPerWeek: strengthDates.size / weeks,
-    equivalentMinutesPerWeek: (moderate + 2 * vigorous) / weeks,
+    equivalentMinutesPerWeek: (equivalentMinutes ?? moderate + 2 * vigorous) / weeks,
     vigorousMinutesPerWeek: vigorous / weeks,
     trimpPerDay: trimp / days,
     sleepHours: sleep ?? null,

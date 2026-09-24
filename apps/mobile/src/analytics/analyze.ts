@@ -371,6 +371,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     sleepDates: inputs.sleepDates,
     sleepHours: series.sleepHours,
     steps: series.steps,
+    exerciseMinutes: series.exerciseMinutes,
     markers: {
       walking_hr: series.walkingHr,
       vo2_max: series.vo2max,

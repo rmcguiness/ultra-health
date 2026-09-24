@@ -12,7 +12,13 @@ import { loadRamp } from '../training/ramp';
 import { addDays } from '../time/dates';
 import { adaptationState } from './adaptationState';
 import { scorecard } from './scorecard';
-import { trainingBlocks, whatWorked, type BlockFeatures, type TrainingBlock } from './whatWorked';
+import {
+  blockFeatures,
+  trainingBlocks,
+  whatWorked,
+  type BlockFeatures,
+  type TrainingBlock,
+} from './whatWorked';
 
 const FROM = '2026-01-01';
 
@@ -431,5 +437,38 @@ describe('fitnessAtRisk', () => {
     expect(fitnessAtRisk({ ...base, fitnessImproving: true })).toBe(false);
     // Load already rising: rebuilding, not detraining.
     expect(fitnessAtRisk({ ...base, rampingUp: true })).toBe(false);
+  });
+});
+
+describe('blockFeatures counts like the checklist', () => {
+  it('credits Exercise minutes and counts only real cardio sessions', () => {
+    const walk: TrainingSession = {
+      date: '2026-03-02',
+      startMs: 0,
+      activityType: 52,
+      durationMinutes: 30,
+      load: {
+        trimp: 8,
+        minutes: { light: 30, moderate: 0, vigorous: 0 },
+        durationMinutes: 30,
+        coveredMinutes: 30,
+        method: 'heart_rate_series',
+      },
+    };
+    const f = blockFeatures(
+      {
+        sessions: [walk],
+        exerciseMinutes: dense(
+          '2026-02-01',
+          Array.from({ length: 28 }, () => 30),
+        ),
+        markers: {},
+      },
+      '2026-02-01',
+      '2026-02-28',
+    );
+    // 30 Exercise minutes a day = 210 a week, as the Cardio tile shows.
+    expect(f.equivalentMinutesPerWeek).toBeCloseTo(210);
+    expect(f.aerobicSessionsPerWeek).toBe(0);
   });
 });

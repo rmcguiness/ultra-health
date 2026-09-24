@@ -185,6 +185,8 @@ export function aerobicTrend(
 
 export interface MarkerProjection {
   readonly date: LocalDate;
+  /** The fitted trend today, the point the projection starts from. */
+  readonly trendNow: number;
   readonly value: number;
   readonly lower: number;
   readonly upper: number;
@@ -213,6 +215,7 @@ export function projectMarker(
   const b = atPivot + t.upper * dx;
   return {
     date: addDays(date, horizonDays),
+    trendNow: atPivot + t.slope * (windowDays - 1 - pivot),
     value: atPivot + t.slope * dx,
     lower: Math.min(a, b),
     upper: Math.max(a, b),

@@ -277,6 +277,7 @@ export function ScorecardCard({ outlook }: { outlook: O }) {
 export function ForecastCard({ outlook }: { outlook: O }) {
   const router = useRouter();
   const v = outlook.vo2Projection;
+  const vo2Change = outlook.aerobic.markers.find((m) => m.marker === 'vo2_max')?.change;
   const w = outlook.weight;
   const last = w?.filtered.at(-1);
   const f = outlook.weightForecast.at(-1);
@@ -292,6 +293,11 @@ export function ForecastCard({ outlook }: { outlook: O }) {
             label="VO₂max"
             value={v.value.toFixed(1)}
             range={`${v.lower.toFixed(1)}–${v.upper.toFixed(1)}`}
+            note={`trend now ${v.trendNow.toFixed(1)}${
+              vo2Change !== undefined
+                ? ` · ${vo2Change >= 0 ? '+' : '−'}${Math.abs(vo2Change).toFixed(1)} over 6 weeks`
+                : ''
+            }`}
             onPress={() => router.push({ pathname: '/metric/[id]', params: { id: 'vo2_max' } })}
           />
         ) : (

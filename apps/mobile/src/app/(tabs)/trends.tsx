@@ -211,7 +211,7 @@ function SummaryLine({ row, first }: { row: SummaryRow; first: boolean }) {
           </Text>
         ) : null}
         {row.note ? (
-          <Text variant="caption" tone="secondary">
+          <Text variant="caption" tone={row.noteTone ?? 'secondary'}>
             {row.note}
           </Text>
         ) : null}

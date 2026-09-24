@@ -312,6 +312,7 @@ function forecastContent(o: Outlook): AboutContent {
   const facts: Fact[] = [];
   const v = o.vo2Projection;
   if (v) {
+    facts.push({ label: 'VO₂max trend now', value: v.trendNow.toFixed(1) });
     facts.push({
       label: 'VO₂max in 4 weeks',
       value: `${v.value.toFixed(1)} (${v.lower.toFixed(1)}–${v.upper.toFixed(1)})`,
