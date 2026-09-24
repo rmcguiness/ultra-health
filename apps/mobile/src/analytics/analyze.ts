@@ -14,6 +14,7 @@ import {
   maintenanceCheck,
   mean,
   planToday,
+  projectMarker,
   readiness,
   scorecard,
   sleepRegularityIndex,
@@ -34,6 +35,7 @@ import {
   type IllnessWatch,
   type LocalDate,
   type MaintenanceCheck,
+  type MarkerProjection,
   type Readiness,
   type Scorecard,
   type SleepRegularity,
@@ -186,6 +188,8 @@ export interface Outlook {
   readonly sleepRegularity: SleepRegularity | undefined;
   readonly whatWorked: WhatWorked;
   readonly detraining: DetrainingOutlook | undefined;
+  /** VO₂max in 4 weeks if its trend continues; only when the trend is real. */
+  readonly vo2Projection: MarkerProjection | undefined;
 }
 
 /**
@@ -282,6 +286,13 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     composition,
     sleepRegularity,
     whatWorked: whatWorked(blocks, current),
+    vo2Projection:
+      series.vo2max &&
+      aerobic.markers.some(
+        (m) => m.marker === 'vo2_max' && (m.verdict === 'improving' || m.verdict === 'declining'),
+      )
+        ? projectMarker(series.vo2max, date, 42, 28)
+        : undefined,
     detraining:
       below !== undefined && below >= 2
         ? detrainingOutlook({ daysBelowMaintenance: below * 7, vo2max: latestVo2 ?? undefined })

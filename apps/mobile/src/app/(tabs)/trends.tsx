@@ -12,6 +12,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTimeline } from '@/features/analytics';
 import { READINESS_COPY, STATE_COPY } from '@/features/today/copy';
 import { barcode, timelineModel } from '@/features/trends/model';
+import { PlannerCard } from '@/features/trends/PlannerCard';
 import { formatDay } from '@/ui/charts/model';
 import { Compass } from '@/ui/charts/Compass';
 import { SleepBarcode } from '@/ui/charts/SleepBarcode';
@@ -170,6 +171,8 @@ export default function Trends() {
             </Text>
             <SourceChips ids={['morton1990', 'plews2013', 'coyle1986', 'kalman1960']} />
           </Card>
+
+          <PlannerCard inputs={data.inputs} />
 
           <Card>
             <View style={styles.stack}>

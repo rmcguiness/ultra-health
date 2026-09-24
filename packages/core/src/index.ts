@@ -26,3 +26,4 @@ export * from './insights/adaptationState';
 export * from './insights/whatWorked';
 export * from './recommend/plan';
 export * from './insights/scorecard';
+export * from './training/planner';

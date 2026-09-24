@@ -305,6 +305,14 @@ export function FitnessCard({ outlook }: { outlook: O }) {
             </Text>
           </View>
         ))}
+        {outlook.vo2Projection ? (
+          <Text variant="caption" tone="secondary">
+            If the trend continues, VO₂max in 4 weeks: about{' '}
+            {outlook.vo2Projection.value.toFixed(1)} (range {outlook.vo2Projection.lower.toFixed(1)}
+            –{outlook.vo2Projection.upper.toFixed(1)}). Watch estimates run low in absolute terms,
+            so read the direction.
+          </Text>
+        ) : null}
         <Text variant="footnote" tone="tertiary">
           A marker counts as moving only when its trend interval excludes zero and the change is
           bigger than one reading’s noise.

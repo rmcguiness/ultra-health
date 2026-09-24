@@ -246,15 +246,27 @@ montero2017); 2+ weeks below the maintenance minimum (spiering2021).
 
 ## Predictions
 
-| Question                   | Method                                                                                                          | Framing                                            |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Where is my weight going?  | Kalman forecast, level and reading intervals                                                                    | "If nothing changes", intervals widen with horizon |
-| What if I train X per day? | Fitness/fatigue projected under a planned load; `dailyLoadForFitness` solves for the load that reaches a target | Model-based, constants shown                       |
-| Is my engine improving?    | Theil–Sen projection of each marker                                                                             | "If the current trend continues"                   |
-| What if I stop?            | Coyle 1984 detraining curve from the current VO₂max                                                             | Upper bound                                        |
+| Question                   | Method                                                                                                                                                                                                                                                                                      | Framing                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Where is my weight going?  | Kalman forecast, level and reading intervals                                                                                                                                                                                                                                                | "If nothing changes", intervals widen with horizon                                                        |
+| What if I train like this? | Planner (`training/planner.ts`): sessions per week × session size (the 25th/50th/75th percentile of your own last 90 days of TRIMP), spread evenly through the week and run through the fitness–fatigue model for 4 weeks; also solves the sessions needed to hold fitness or build it ~10% | Compares plans; constants shown (morton1990, hellard2006). Flags a > 30% two-week load rise (nielsen2014) |
+| Is my engine improving?    | Theil–Sen projection of each marker; VO₂max projection shown only when its trend is real                                                                                                                                                                                                    | "If the current trend continues"                                                                          |
+| What if I stop?            | Coyle 1984 detraining curve from the current VO₂max, only for someone who met the maintenance minimum in the last 6 months                                                                                                                                                                  | Upper bound                                                                                               |
 
 Deliberately not predicted: injury risk (no validated model), race performance, calories
 burned (wrist estimates miss by > 20%, shcherbina2017).
+
+## Where each output appears in the app
+
+- **Today**: plan, readiness, illness watch, last 7 days vs WHO targets, training state and
+  weekly insights, in-shape scorecard, fitness trend and VO₂max projection, weight trend and
+  forecast, what worked, detraining outlook. Every statement has tappable sources.
+- **Trends**: adaptation timeline (state, load, recovery, walking HR, weight) with one shared
+  crosshair, the planner, the recovery compass and the sleep barcode, all following the
+  selected day.
+- **Metric pages**: data-rich charts for D/W/M/3M/6M/Y/All with a trend overlay, dashed
+  joins across missing days, the personal normal band on short ranges and tap or
+  press-and-drag inspection.
 
 ## Back-testing
 
