@@ -91,19 +91,27 @@ simulated illness three weeks ago, into the Simulator's HealthKit store.
 
 HealthKit data only exists on your phone, so this is where the app becomes useful.
 
-```bash
-cd apps/mobile
-npx expo prebuild --platform ios --clean
-npx expo run:ios --device        # choose your iPhone; Xcode handles signing
-```
+One-time setup:
 
-Signing needs your Apple ID team, which you can set once in Xcode under _Signing &
-Capabilities_. A free account works for personal installs; profiles expire after 7 days. The
-paid Developer Program ($99/yr) is required for TestFlight, the App Store and EAS Build. Set
-`IOS_BUNDLE_ID` if you want a different bundle identifier.
+1. **Xcode → Settings → Accounts → +** and sign in with your Apple Developer account.
+2. Copy your **Team ID** (developer.apple.com → Account → Membership details) into
+   `apps/mobile/.env.local` (git-ignored) as `APPLE_TEAM_ID=XXXXXXXXXX`.
+3. Connect the iPhone by cable, tap **Trust**, then enable **Settings → Privacy & Security →
+   Developer Mode** on the phone (it restarts).
+
+Install a standalone Release build (no dev server needed; the signing profile lasts a year):
+
+```bash
+cd apps/mobile && pnpm ios:phone
+```
 
 The first sync backfills your full history. Raw heart rate is the largest stream and runs
 last, so everything else appears first.
+
+**Whoop:** in the Whoop app, turn on _Integrations → Apple Health_. Whoop writes resting HR,
+sleep, workouts, respiratory rate, SpO₂, active energy and workout heart rate to Health, and
+Ultra Health reads them as a separate `whoop` source. Whoop does **not** write HRV, Recovery
+or Strain to Health; those need the Whoop API (see Roadmap).
 
 ## Testing
 
@@ -122,8 +130,10 @@ last, so everything else appears first.
    trend filtering.
 2. **Background delivery** (HealthKit observer queries) so data is fresh before you open the
    app.
-3. **Whoop API integration.** Recovery, strain and sleep performance aren't written to
-   HealthKit. This needs a small backend for OAuth (the client secret can't ship in the app).
+3. **Whoop API integration.** HRV (RMSSD), Recovery and Strain aren't written to HealthKit.
+   Whoop's OAuth token exchange and refresh require the client secret, which can't ship in the
+   app, so a small token broker (e.g. a Supabase Edge Function) holds it. Health data still
+   flows Whoop → phone directly.
 4. **Scale vendor API** for metrics HealthKit can't store (visceral fat, muscle mass, body
    water).
 5. **Android** via Health Connect, as a second `HealthDataSource` adapter.

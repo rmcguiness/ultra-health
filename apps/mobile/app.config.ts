@@ -9,6 +9,9 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 
 const BUNDLE_ID = process.env.IOS_BUNDLE_ID ?? 'com.ryanmcguiness.ultrahealth';
 
+/** Apple Developer team for automatic signing. Kept in apps/mobile/.env.local. */
+const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
+
 const HEALTH_SHARE_USAGE =
   'Ultra Health reads your heart, sleep, activity, workout and body measurements to build ' +
   'personal baselines and trends. This data is stored encrypted on this iPhone and is never ' +
@@ -26,6 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   backgroundColor: '#0B0D10',
   ios: {
     bundleIdentifier: IS_DEV ? `${BUNDLE_ID}.dev` : BUNDLE_ID,
+    ...(APPLE_TEAM_ID ? { appleTeamId: APPLE_TEAM_ID } : {}),
     // iOS 17 adds Time in Daylight and Physical Effort; sleep stages need 16.
     deploymentTarget: '17.0',
     supportsTablet: false,

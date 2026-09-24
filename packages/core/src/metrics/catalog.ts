@@ -59,9 +59,9 @@ const definitions = [
     display: { unit: 'ms', decimals: 0 },
     plausibleRange: [1, 300],
     description:
-      'Standard deviation of beat-to-beat intervals from ~1-minute recordings. SDNN is not ' +
-      'comparable to RMSSD. Some third-party apps write RMSSD into this type, so the series ' +
-      'must never be blended across sources.',
+      'Standard deviation of beat-to-beat intervals from ~1-minute Apple Watch recordings. ' +
+      "SDNN is not comparable to RMSSD, the measure behind Whoop's HRV. Whoop does not write " +
+      'HRV to Apple Health; its HRV arrives only through the Whoop API.',
   },
   {
     id: 'hrv_rmssd',
@@ -74,7 +74,7 @@ const definitions = [
     plausibleRange: [1, 300],
     description:
       'Root mean square of successive beat-to-beat differences, a vagally mediated HRV ' +
-      'measure. It is the metric Whoop and Oura report. Available from iOS 27.',
+      'measure and the one Whoop and Oura report. HealthKit type available from iOS 27.',
   },
   {
     id: 'heart_rate_recovery_1min',

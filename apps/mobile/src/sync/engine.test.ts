@@ -162,29 +162,30 @@ describe('SyncEngine', () => {
   });
 
   it('records provenance and local dates, and never blends sources', async () => {
-    const hrv = health.quantityLog('hrv_sdnn');
-    hrv.add(
+    const rhr = health.quantityLog('resting_heart_rate');
+    rhr.add(
       // 23:30 in New York is already the next day in UTC.
-      quantitySample({ startMs: at('2026-03-05T23:30:00-05:00'), value: 60, source: APPLE_WATCH }),
-      quantitySample({ startMs: at('2026-03-05T23:40:00-05:00'), value: 40, source: APPLE_WATCH }),
-      // Whoop's value is RMSSD written into the SDNN type: it must stay separate.
-      quantitySample({ startMs: at('2026-03-06T06:00:00-05:00'), value: 95, source: WHOOP }),
+      quantitySample({ startMs: at('2026-03-05T23:30:00-05:00'), value: 52, source: APPLE_WATCH }),
+      quantitySample({ startMs: at('2026-03-05T23:40:00-05:00'), value: 50, source: APPLE_WATCH }),
+      // Whoop measures RHR during sleep, Apple during daytime rest: separate series.
+      quantitySample({ startMs: at('2026-03-06T06:00:00-05:00'), value: 47, source: WHOOP }),
       // Implausible artifact.
       quantitySample({ startMs: at('2026-03-05T12:00:00-05:00'), value: 900, source: APPLE_WATCH }),
     );
     await engine.run();
 
     const range = { from: '2026-03-01', to: '2026-03-10' };
-    const watch = await getDailySeries(db, METRICS.hrv_sdnn, range);
+    const watch = await getDailySeries(db, METRICS.resting_heart_rate, range);
     expect(watch.sourceKind).toBe('apple_watch');
+    // Daily aggregation is "last reading of the day", implausible value excluded.
     expect(watch.points).toEqual([{ date: '2026-03-05', value: 50, n: 2 }]);
 
-    const whoop = await getDailySeries(db, METRICS.hrv_sdnn, range, 'whoop');
-    expect(whoop.points).toEqual([{ date: '2026-03-06', value: 95, n: 1 }]);
+    const whoop = await getDailySeries(db, METRICS.resting_heart_rate, range, 'whoop');
+    expect(whoop.points).toEqual([{ date: '2026-03-06', value: 47, n: 1 }]);
 
     const inventory = await getInventory(db);
     const watchRow = inventory.samples.find(
-      (r) => r.metric === 'hrv_sdnn' && r.kind === 'apple_watch',
+      (r) => r.metric === 'resting_heart_rate' && r.kind === 'apple_watch',
     );
     expect(watchRow).toMatchObject({ count: 3, implausible: 1, productType: 'Watch7,5' });
     expect(inventory.samples.find((r) => r.kind === 'whoop')?.count).toBe(1);
