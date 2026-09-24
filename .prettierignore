@@ -5,3 +5,6 @@ apps/mobile/ios/
 apps/mobile/android/
 apps/mobile/.expo/
 apps/mobile/expo-env.d.ts
+
+# Published research artifacts are kept byte-identical to what was shared.
+docs/research/*.html

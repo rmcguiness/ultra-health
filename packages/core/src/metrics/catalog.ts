@@ -237,9 +237,9 @@ const definitions = [
     display: { unit: 'kcal', decimals: 0 },
     plausibleRange: [0, 12_000],
     description:
-      'Estimated energy expended above resting. Wrist-worn energy estimates carry large error ' +
-      '(≥27% in validation studies, Shcherbina et al. 2017), so compare days with each other ' +
-      'rather than against food logs.',
+      'Estimated energy expended above resting. In lab validation, no wrist device estimated ' +
+      'energy expenditure with under 20% error (Shcherbina et al. 2017), so compare days with ' +
+      'each other rather than against food logs.',
   },
   {
     id: 'basal_energy',

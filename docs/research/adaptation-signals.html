@@ -1,0 +1,1479 @@
+<title>Adaptation Signals</title>
+<meta name="description" content="Evidence review of what Apple Watch, Whoop and smart-scale data can reveal, with hybrid chart designs that combine them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --ground: #f3f5f5;
+    --surface: #ffffff;
+    --ink: #0f1317;
+    --ink-2: #46505a;
+    --muted: #737d88;
+    --hair: #dde2e5;
+    --hair-2: #eaeef0;
+    --accent: #1f5fbf;
+    --accent-wash: #e8eff9;
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s3: #1baf7a;
+    --load: #c9cfd4;
+    --band: rgba(42, 120, 214, 0.1);
+    --ci: rgba(15, 19, 23, 0.08);
+    --good: #0ca30c;
+    --warn: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --info: #2a78d6;
+    --neutral: #aab2b9;
+    --quiet: #dfe4e7;
+    --code: #edf1f2;
+    --shadow: 0 1px 2px rgba(15, 19, 23, 0.05), 0 8px 24px rgba(15, 19, 23, 0.06);
+    --f-display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+    --f-body: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+    --f-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+      --ground: #0c0f12;
+      --surface: #14181c;
+      --ink: #edf1f4;
+      --ink-2: #b3bcc6;
+      --muted: #8a949e;
+      --hair: #262c32;
+      --hair-2: #1c2126;
+      --accent: #7aaeff;
+      --accent-wash: #16233a;
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --load: #3a4249;
+      --band: rgba(57, 135, 229, 0.14);
+      --ci: rgba(237, 241, 244, 0.1);
+      --info: #3987e5;
+      --neutral: #5c666f;
+      --quiet: #2a3137;
+      --code: #1b2025;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --ground: #0c0f12;
+    --surface: #14181c;
+    --ink: #edf1f4;
+    --ink-2: #b3bcc6;
+    --muted: #8a949e;
+    --hair: #262c32;
+    --hair-2: #1c2126;
+    --accent: #7aaeff;
+    --accent-wash: #16233a;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --load: #3a4249;
+    --band: rgba(57, 135, 229, 0.14);
+    --ci: rgba(237, 241, 244, 0.1);
+    --info: #3987e5;
+    --neutral: #5c666f;
+    --quiet: #2a3137;
+    --code: #1b2025;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 18px;
+    line-height: 1.6;
+    padding-inline: 20px;
+    padding-block: 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1080px; margin: 0 auto; }
+  .prose { max-width: 680px; margin-inline: auto; }
+  h1, h2, h3, h4 { font-family: var(--f-display); text-wrap: balance; letter-spacing: -0.015em; }
+  h2 { font-size: clamp(28px, 4vw, 38px); line-height: 1.12; margin: 0 0 18px; font-weight: 700; }
+  h3 { font-size: 22px; line-height: 1.25; margin: 34px 0 10px; font-weight: 700; }
+  h4 { font-family: var(--f-ui); font-size: 15px; letter-spacing: 0; margin: 0 0 6px; font-weight: 600; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+  sup.ref { font-family: var(--f-ui); font-size: 0.62em; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  .ui { font-family: var(--f-ui); }
+  .mono { font-family: var(--f-mono); }
+  code, .formula {
+    font-family: var(--f-mono); font-size: 0.82em; background: var(--code); border-radius: 4px; padding: 1px 5px;
+  }
+  .formula {
+    display: block; padding: 12px 14px; margin: 0 0 16px; font-size: 14px; line-height: 1.7;
+    overflow-x: auto; white-space: pre; border-left: 2px solid var(--hair);
+    border-radius: 0 6px 6px 0;
+  }
+  section { padding-block: 56px 8px; border-top: 1px solid var(--hair); }
+
+  /* ── Masthead ──────────────────────────────────── */
+  .masthead { padding-block: 56px 28px; }
+  .eyebrow {
+    font-family: var(--f-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 18px;
+  }
+  .masthead h1 {
+    font-size: clamp(46px, 9vw, 104px); line-height: 0.92; margin: 0 0 22px; font-weight: 800;
+    letter-spacing: -0.035em;
+  }
+  .masthead h1 span { color: var(--muted); font-weight: 600; }
+  .dek { font-size: clamp(19px, 2.4vw, 23px); line-height: 1.45; max-width: 720px; color: var(--ink-2); margin: 0 0 22px; }
+  .provenance {
+    font-family: var(--f-ui); font-size: 13.5px; line-height: 1.5; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+  }
+  .provenance b { color: var(--ink-2); font-weight: 600; }
+
+  .summary {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 14px;
+    padding: 26px 28px 10px; margin: 8px 0 28px; box-shadow: var(--shadow);
+  }
+  .summary h2 { font-size: 22px; margin-bottom: 12px; }
+  .summary ol { margin: 0; padding-left: 22px; }
+  .summary li { margin-bottom: 12px; }
+  .summary li::marker { font-family: var(--f-ui); font-weight: 600; color: var(--muted); }
+
+  nav.toc { font-family: var(--f-ui); font-size: 14px; margin: 0 0 8px; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+  nav.toc a {
+    display: inline-block; padding: 5px 11px; border-radius: 999px; background: var(--surface);
+    border: 1px solid var(--hair); color: var(--ink-2); text-decoration: none;
+  }
+  nav.toc a:hover { border-color: var(--ink-2); color: var(--ink); }
+
+  /* ── Figures ───────────────────────────────────── */
+  figure { margin: 28px 0 32px; }
+  .fig {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 14px;
+    padding: 20px 20px 16px; box-shadow: var(--shadow); position: relative;
+  }
+  .fig-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; }
+  .fig-title { font-family: var(--f-display); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; margin: 0; }
+  .fig-note { font-family: var(--f-ui); font-size: 12px; color: var(--muted); }
+  figcaption {
+    font-family: var(--f-ui); font-size: 14px; line-height: 1.55; color: var(--ink-2);
+    max-width: 760px; margin: 12px 4px 0;
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 10px; background: var(--hair-2); border: 1px solid var(--hair); }
+  .seg button {
+    font-family: var(--f-ui); font-size: 14px; font-weight: 500; color: var(--ink-2);
+    background: transparent; border: 0; border-radius: 7px; padding: 7px 12px; cursor: pointer;
+  }
+  .seg button[aria-pressed='true'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .scenario-blurb { font-family: var(--f-ui); font-size: 14.5px; color: var(--ink-2); margin: 10px 0 14px; max-width: 760px; }
+
+  .lanes { position: relative; outline: none; touch-action: pan-y; }
+  .lane { position: relative; }
+  .lane + .lane { margin-top: 6px; }
+  .lane-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px;
+    font-family: var(--f-ui); font-size: 12.5px; color: var(--muted); margin: 0 0 2px 44px;
+  }
+  .lane-head strong { font-size: 13px; color: var(--ink); font-weight: 600; }
+  .key { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  .key i { display: inline-block; width: 14px; height: 2px; border-radius: 2px; }
+  .key i.rect { width: 9px; height: 9px; border-radius: 2px; }
+  .key i.dot { width: 7px; height: 7px; border-radius: 50%; }
+  svg { display: block; overflow: visible; }
+  svg text { font-family: var(--f-ui); }
+  .axis text { fill: var(--muted); font-size: 11px; }
+  .grid line { stroke: var(--hair-2); stroke-width: 1; }
+  .baseline { stroke: var(--hair); stroke-width: 1; }
+  .endlabel { font-size: 11.5px; fill: var(--ink-2); }
+  .xhair { stroke: var(--ink-2); stroke-width: 1; opacity: 0.55; pointer-events: none; }
+
+  .ribbon-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--f-ui); font-size: 12.5px; color: var(--ink-2); margin: 6px 0 10px 44px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .chip .sw { width: 16px; height: 12px; border-radius: 3px; display: inline-grid; place-items: center; font-size: 10px; line-height: 1; font-weight: 700; }
+
+  .tooltip {
+    position: absolute; z-index: 5; pointer-events: none; min-width: 208px; max-width: 250px;
+    background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; box-shadow: var(--shadow);
+    padding: 10px 12px; font-family: var(--f-ui); font-size: 12.5px; line-height: 1.45; color: var(--ink-2);
+  }
+  .tooltip .tt-date { font-weight: 600; color: var(--ink); font-size: 13px; }
+  .tooltip .tt-phase { margin: 3px 0 6px; }
+  .tooltip .row { display: flex; justify-content: space-between; gap: 10px; }
+  .tooltip .row b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tooltip .k { display: inline-flex; align-items: center; gap: 6px; }
+  .tooltip .k i { width: 10px; height: 2px; border-radius: 2px; display: inline-block; }
+  .tooltip hr { border: 0; border-top: 1px solid var(--hair-2); margin: 6px 0; }
+
+  details.table-view { margin-top: 12px; font-family: var(--f-ui); font-size: 13.5px; }
+  details.table-view summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+  .table-wrap { overflow-x: auto; margin-top: 10px; }
+  table { border-collapse: collapse; width: 100%; font-family: var(--f-ui); font-size: 13.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--hair-2); }
+  th { font-weight: 600; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--hair); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td strong { color: var(--ink); }
+  .atlas { min-width: 960px; }
+  .atlas td:first-child { font-weight: 600; color: var(--ink); min-width: 130px; }
+  .atlas td { color: var(--ink-2); }
+
+  .grade {
+    display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px;
+    font-family: var(--f-ui); font-size: 12px; font-weight: 700; border: 1px solid var(--hair);
+    color: var(--ink); background: var(--hair-2); vertical-align: 1px;
+  }
+  .grade.a { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .grade.b { background: var(--surface); border-color: var(--ink-2); }
+  .grade.c { background: transparent; border-style: dashed; color: var(--ink-2); }
+  .grades-key { font-family: var(--f-ui); font-size: 13.5px; color: var(--ink-2); display: grid; gap: 6px; margin: 0 0 18px; }
+  .grades-key div { display: flex; gap: 10px; align-items: baseline; }
+
+  .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .two-up { grid-template-columns: 1fr; } }
+
+  .compass-wrap { display: grid; grid-template-columns: minmax(0, 440px) 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 820px) { .compass-wrap { grid-template-columns: 1fr; } }
+  .compass-side { font-family: var(--f-ui); font-size: 14px; color: var(--ink-2); }
+  .compass-side label { display: block; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .compass-side input[type='range'] { width: 100%; accent-color: var(--s1); }
+  .quad-list { display: grid; gap: 10px; margin-top: 16px; }
+  .quad-list div { padding-left: 12px; border-left: 2px solid var(--hair); }
+  .quad-list b { color: var(--ink); display: block; font-weight: 600; }
+
+  .spec { display: grid; gap: 16px; margin: 20px 0; }
+  .spec-item { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 18px 20px; }
+  .spec-item header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .spec-item h3 { margin: 0; font-size: 20px; }
+  .spec-item .q { font-style: italic; color: var(--ink-2); margin-bottom: 10px; }
+  .spec-item dl { display: grid; grid-template-columns: 128px 1fr; gap: 6px 14px; margin: 0; font-family: var(--f-ui); font-size: 14px; line-height: 1.5; }
+  .spec-item dt { color: var(--muted); font-weight: 500; }
+  .spec-item dd { margin: 0; color: var(--ink-2); }
+  @media (max-width: 560px) { .spec-item dl { grid-template-columns: 1fr; } .spec-item dt { margin-top: 6px; } }
+
+  .callout { font-family: var(--f-ui); font-size: 15px; line-height: 1.55; background: var(--accent-wash); border-radius: 10px; padding: 14px 16px; margin: 0 0 18px; color: var(--ink-2); }
+  .callout b { color: var(--ink); }
+
+  ol.refs { font-family: var(--f-ui); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); padding-left: 30px; }
+  ol.refs li { margin-bottom: 7px; padding-left: 4px; }
+  ol.refs li:target { background: var(--accent-wash); border-radius: 4px; }
+  ul.tight { padding-left: 22px; margin: 0 0 16px; }
+  ul.tight li { margin-bottom: 8px; }
+
+  .footer-note { font-family: var(--f-ui); font-size: 13px; color: var(--muted); margin-top: 32px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; padding-inline: 16px; }
+    .fig { padding: 14px 12px 12px; }
+    .summary { padding: 20px 18px 6px; }
+    .lane-head, .ribbon-legend { margin-left: 34px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <p class="eyebrow">Ultra Health · Research brief · 23 September 2026</p>
+    <h1>Adaptation <span>Signals</span></h1>
+    <p class="dek">How to read Apple Watch, Whoop and smart-scale data as one system, and why body composition is the last of your metrics to show what training is doing.</p>
+    <div class="provenance">
+      <span><b>48 peer-reviewed sources</b>, each checked against PubMed</span>
+      <span><b>Figures use simulated data</b> built from published effect sizes, not your records</span>
+      <span>Evidence graded <span class="grade a">A</span> <span class="grade b">B</span> <span class="grade c">C</span> throughout</span>
+    </div>
+  </header>
+
+  <div class="prose">
+    <div class="summary">
+      <h2>The short version</h2>
+      <ol>
+        <li><strong>Your instinct is right: body composition lags.</strong> The body changes on three different clocks. Autonomic signals (HRV, resting HR) react within days. Cardiorespiratory fitness shifts over weeks. Fat and muscle move over months. Read on its own, the slowest clock misleads you in both directions.</li>
+        <li><strong>The scale rises when hard training starts for physiological reasons.</strong> New training expands plasma volume<sup class="ref"><a href="#ref-5">5</a></sup>, refills glycogen (stored with 3–4 g of water per gram<sup class="ref"><a href="#ref-7">7</a></sup>), and swells unaccustomed muscle with fluid for about 3 weeks<sup class="ref"><a href="#ref-8">8</a></sup>. Fat loss continues underneath and shows once that water stops rising.</li>
+        <li><strong>Detraining hides for the opposite reason.</strong> After 2–4 weeks off, blood volume falls about 9% and heart rate at the same workload rises about 11%<sup class="ref"><a href="#ref-1">1</a></sup>. The water lost can offset fat gained, so the scale looks flat while fitness drains. Walking heart rate is the early warning.</li>
+        <li><strong>Hybrid views work when they align timescales instead of merging them.</strong> The core design is one shared time axis with stacked lanes for load, recovery, fitness and composition, plus a model that splits weight into fat and water. A single averaged score can hide which clock is moving.</li>
+        <li><strong>Every signal needs a personal baseline and an honest noise floor.</strong> Wrist VO₂max reads about 4.5 mL/kg/min low<sup class="ref"><a href="#ref-39">39</a></sup>. Apple Watch sleep staging misses about 43 minutes of deep sleep<sup class="ref"><a href="#ref-45">45</a></sup>. Consumer body-fat estimates can be 10 points off<sup class="ref"><a href="#ref-13">13</a></sup>. Trends are usable where absolute numbers are not.</li>
+        <li><strong>Be modest about "readiness".</strong> HRV-guided training improves submaximal physiology, but meta-analyses find no significant VO₂max or performance advantage<sup class="ref"><a href="#ref-23">23</a>,<a href="#ref-24">24</a></sup>. Use it to schedule hard days, not to forecast results.</li>
+      </ol>
+    </div>
+
+    <nav class="toc" aria-label="Contents">
+      <ol>
+        <li><a href="#timeline">Adaptation timeline</a></li>
+        <li><a href="#clocks">Three clocks</a></li>
+        <li><a href="#scale">Why the scale lies</a></li>
+        <li><a href="#atlas">Metric atlas</a></li>
+        <li><a href="#hybrids">Hybrid views</a></li>
+        <li><a href="#scores">Scores to build</a></li>
+        <li><a href="#compare">Whoop &amp; Apple</a></li>
+        <li><a href="#methods">Methods</a></li>
+        <li><a href="#pitfalls">Pitfalls</a></li>
+        <li><a href="#inputs">Inputs to add</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+        <li><a href="#refs">References</a></li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- ─────────────── Timeline ─────────────── -->
+  <figure id="timeline">
+    <div class="fig">
+      <div class="fig-head">
+        <p class="fig-title">Fig. 1 · The adaptation timeline</p>
+        <span class="fig-note">Simulated · 12 weeks · hover or use ← → to inspect a day</span>
+      </div>
+      <div class="seg" role="group" aria-label="Scenario">
+        <button type="button" data-scenario="block" aria-pressed="true">Hard training block</button>
+        <button type="button" data-scenario="detrain" aria-pressed="false">Stopping training</button>
+        <button type="button" data-scenario="illness" aria-pressed="false">Getting sick</button>
+      </div>
+      <p class="scenario-blurb" id="scenario-blurb"></p>
+      <div class="lanes" id="lanes" tabindex="0" aria-label="Adaptation timeline. Use left and right arrow keys to move between days.">
+        <div class="lane" data-lane="phase">
+          <svg id="lane-phase" height="24" role="img" aria-label="Adaptation state by day"></svg>
+        </div>
+        <div class="ribbon-legend" id="ribbon-legend"></div>
+        <div class="lane" data-lane="load">
+          <div class="lane-head"><strong>Training load</strong>
+            <span class="key"><i class="rect" style="background:var(--load)"></i>Daily load</span>
+            <span class="key"><i style="background:var(--s1)"></i>Fitness (42-day)</span>
+            <span class="key"><i style="background:var(--s2)"></i>Fatigue (7-day)</span>
+          </div>
+          <svg id="lane-load" height="112" role="img" aria-label="Daily training load with fitness and fatigue averages"></svg>
+        </div>
+        <div class="lane" data-lane="recovery">
+          <div class="lane-head"><strong>Recovery signals</strong> <span>7-day mean vs your baseline, in SDs</span>
+            <span class="key"><i style="background:var(--s1)"></i>HRV</span>
+            <span class="key"><i style="background:var(--s2)"></i>Resting HR</span>
+          </div>
+          <svg id="lane-recovery" height="104" role="img" aria-label="HRV and resting heart rate relative to baseline"></svg>
+        </div>
+        <div class="lane" data-lane="walk">
+          <div class="lane-head"><strong>Walking heart rate</strong> <span>7-day mean, bpm · lower at the same pace = fitter</span></div>
+          <svg id="lane-walk" height="84" role="img" aria-label="Walking heart rate"></svg>
+        </div>
+        <div class="lane" data-lane="weight">
+          <div class="lane-head"><strong>Scale weight</strong> <span>kg</span>
+            <span class="key"><i class="dot" style="background:var(--neutral)"></i>Daily reading</span>
+            <span class="key"><i style="background:var(--ink)"></i>Real-time trend (Kalman)</span>
+          </div>
+          <svg id="lane-weight" height="100" role="img" aria-label="Daily weight readings with filtered trend"></svg>
+        </div>
+        <div class="lane" data-lane="comp">
+          <div class="lane-head"><strong>What the scale is made of</strong> <span>modelled change since day 1, kg</span>
+            <span class="key"><i style="background:var(--s1)"></i>Water &amp; glycogen</span>
+            <span class="key"><i style="background:var(--s2)"></i>Fat</span>
+            <span class="key"><i style="background:var(--ink)"></i>Scale trend</span>
+          </div>
+          <svg id="lane-comp" height="132" role="img" aria-label="Modelled change in fat and water versus the scale trend"></svg>
+        </div>
+        <div class="tooltip" id="tl-tip" hidden></div>
+      </div>
+      <details class="table-view">
+        <summary>Show the weekly numbers as a table</summary>
+        <div class="table-wrap"><table id="tl-table"></table></div>
+      </details>
+    </div>
+    <figcaption><b>How to read it:</b> each lane is a separate chart on the same time axis. Nothing shares a y-scale, so no correlation is invented. The top ribbon labels the state the rules in <a href="#scores">Adaptation State</a> would assign each day. In <b>Hard training block</b>, the scale rises for two to three weeks after the block starts while modelled fat falls the whole time: water, glycogen and muscle swelling explain the gap. In <b>Stopping training</b>, the scale moves far less than fat does, because lost plasma and glycogen hide the gain, while walking heart rate climbs within weeks. The simulation is tuned to the magnitudes in refs 1–10 and 15–19, but it is illustrative, not a validated model of you.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <!-- ─────────────── Clocks ─────────────── -->
+    <section id="clocks">
+      <h2>Your body runs on three clocks</h2>
+      <p>Every metric your devices produce is a sensor reading of some physiological system. Those systems adapt at very different speeds. That single fact explains most of the confusion you described.</p>
+      <p><strong>The fast clock (hours to days)</strong> is the autonomic nervous system. After a hard session, parasympathetic activity, which HRV partly measures, needs up to 24 h to recover from easy work, 24–48 h from threshold work and at least 48 h from high-intensity work<sup class="ref"><a href="#ref-18">18</a></sup>. Illness moves this clock too: resting HR, respiratory rate and skin temperature often shift before symptoms appear<sup class="ref"><a href="#ref-31">31</a>,<a href="#ref-34">34</a></sup>.</p>
+      <p><strong>The medium clock (weeks)</strong> is cardiorespiratory. Plasma volume expands within days of new training and accounts for nearly all of the early blood-volume gain for 2–4 weeks<sup class="ref"><a href="#ref-5">5</a></sup>. Stop training and it reverses: in trained men, 2–4 weeks off cut plasma volume by 12%, stroke volume by 12% and VO₂max by 6%, while heart rate at the same submaximal workload rose 11%<sup class="ref"><a href="#ref-1">1</a></sup>. VO₂max fell 7% in the first 21 days and settled 16% lower by day 56<sup class="ref"><a href="#ref-2">2</a></sup>.</p>
+      <p><strong>The slow clock (months)</strong> is tissue. Body weight responds to a sustained change in energy intake with a half-time of about a year<sup class="ref"><a href="#ref-10">10</a></sup>. Muscle growth measured in the first 3 weeks of resistance training is partly fluid (edema); real hypertrophy shows up later<sup class="ref"><a href="#ref-8">8</a></sup>.</p>
+    </section>
+  </div>
+
+  <figure id="clocks-fig">
+    <div class="fig">
+      <div class="fig-head">
+        <p class="fig-title">Fig. 2 · How long each signal takes to show a detectable change</p>
+        <span class="fig-note">Log scale · approximate ranges synthesized from the cited studies</span>
+      </div>
+      <div id="clocks-chart"></div>
+      <div class="ribbon-legend" style="margin-left:0">
+        <span class="chip"><span class="sw" style="background:var(--s1)"></span>Fast clock: autonomic &amp; fluid</span>
+        <span class="chip"><span class="sw" style="background:var(--s2)"></span>Medium clock: cardiorespiratory</span>
+        <span class="chip"><span class="sw" style="background:var(--s3)"></span>Slow clock: tissue</span>
+      </div>
+      <details class="table-view">
+        <summary>Show as a table</summary>
+        <div class="table-wrap"><table id="clocks-table"></table></div>
+      </details>
+    </div>
+    <figcaption><b>The practical rule:</b> judge a change in training against the clock that can have responded by now. Two weeks into a block, recovery and plasma volume have moved but fat mass barely has. Three weeks into a layoff, VO₂max and walking HR have changed but the scale may not have.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <!-- ─────────────── Scale ─────────────── -->
+    <section id="scale">
+      <h2>Why the scale lies in both directions</h2>
+      <p>A scale measures total mass: fat, muscle, bone, blood, water, glycogen and whatever is in your gut. Day to day, the last four dominate. Muscle and liver glycogen is stored with 3–4 g of water per gram<sup class="ref"><a href="#ref-7">7</a></sup>, and typical stores run to several hundred grams, so filling or emptying them alone can move the scale by 1–2 kg. The popular "3,500 kcal per pound" rule overestimates how fast tissue changes<sup class="ref"><a href="#ref-11">11</a></sup>.</p>
+
+      <h3>Scenario 1: "I train hard for two weeks and look fatter"</h3>
+      <p>Three things add mass in the first weeks of a harder block, and all three are adaptations, not setbacks:</p>
+      <ul class="tight">
+        <li><strong>Plasma volume expansion.</strong> Endurance training raises total blood volume (+9%, from 63.6 to 69.3 mL/kg over 10 weeks in one study<sup class="ref"><a href="#ref-6">6</a></sup>). The early gain is almost all plasma and a net increase in total body water<sup class="ref"><a href="#ref-5">5</a></sup>. For an 80 kg person that is roughly half a kilogram.</li>
+        <li><strong>Glycogen.</strong> Higher training volume with adequate carbohydrate keeps glycogen stores fuller, with 3–4 g of water per gram<sup class="ref"><a href="#ref-7">7</a></sup>.</li>
+        <li><strong>Muscle swelling from new work.</strong> Unaccustomed and eccentric work causes muscle damage and inflammation<sup class="ref"><a href="#ref-9">9</a></sup>. In untrained men, muscle cross-section rose 2.7% by week 3 of resistance training, largely from edema, before real hypertrophy took over (+10.4% by week 10)<sup class="ref"><a href="#ref-8">8</a></sup>. Swollen muscle also looks and feels "softer".</li>
+      </ul>
+      <p>Meanwhile, the extra energy spent training slowly removes fat. Once the fluid gains plateau, usually after 2–4 weeks as the body adapts to the load, the fat loss finally shows on the scale and in the mirror. This is the "keep going two more weeks" payoff you described. Fig. 1's composition lane shows exactly this decomposition.</p>
+
+      <h3>Scenario 2: "I stop training and don't gain weight, then can't run a mile"</h3>
+      <p>The same mechanisms run in reverse. Plasma volume, glycogen stores and oxidative capacity fall within weeks. Muscle oxidative enzymes decline with a half-time of about 12 days<sup class="ref"><a href="#ref-2">2</a></sup>, and short-term detraining lowers VO₂max and blood volume and impairs endurance performance<sup class="ref"><a href="#ref-3">3</a></sup>. Losing fluid <em>subtracts</em> mass while reduced activity slowly <em>adds</em> fat, so the two can cancel on the scale for weeks. The fitness loss does not hide from heart rate: submaximal HR rose 11% within 2–4 weeks of stopping<sup class="ref"><a href="#ref-1">1</a></sup>. Apple Watch measures a version of this passively every day as <em>walking heart rate average</em>.</p>
+
+      <div class="callout"><b>Design consequence:</b> never show weight alone. Show it with a real-time trend and uncertainty, beside the load that explains its short-term swings, and beside a fitness marker on the medium clock. A body-fat % reading from a bathroom scale depends on hydration<sup class="ref"><a href="#ref-12">12</a></sup>, so it inherits the same water artifacts.</div>
+    </section>
+
+    <!-- ─────────────── Atlas ─────────────── -->
+    <section id="atlas">
+      <h2>Metric atlas: what each number can and cannot tell you</h2>
+      <div class="grades-key">
+        <div><span class="grade a">A</span><span>Consistent evidence from large cohorts, randomized trials or meta-analyses.</span></div>
+        <div><span class="grade b">B</span><span>Supported by controlled studies, but samples are small, results mixed, or it relies on device-specific validity.</span></div>
+        <div><span class="grade c">C</span><span>Physiologically sound, but thresholds or combinations need validating on your own data.</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="fig" style="margin-bottom:32px">
+    <div class="table-wrap">
+      <table class="atlas">
+        <thead>
+          <tr><th>Metric</th><th>What it reflects</th><th>Device reality</th><th>Moves in</th><th>Best representation</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HRV</td><td>Cardiac vagal (parasympathetic) modulation: recovery state and, over time, fitness<sup class="ref"><a href="#ref-16">16</a></sup></td><td>Apple: ~1-min SDNN spot checks at random times, noisy. Whoop: RMSSD during sleep, better standardized. Never mix the two. Everyday stressors shift HRV only ~4.6%<sup class="ref"><a href="#ref-19">19</a></sup>, so baselines matter.</td><td>1–3 days</td><td>Log-transform, 7-day rolling mean inside a personal band (±0.5 SD), plus rolling CV<sup class="ref"><a href="#ref-15">15</a>,<a href="#ref-21">21</a></sup></td><td><span class="grade b">B</span></td></tr>
+          <tr><td>Resting HR</td><td>Autonomic balance, aerobic fitness, early illness</td><td>Apple: daytime rest. Whoop: during sleep. Different definitions, so keep separate series.</td><td>Days (illness) to weeks (fitness)</td><td>7-day mean vs baseline; nightly value as z-score for illness checks<sup class="ref"><a href="#ref-31">31</a></sup></td><td><span class="grade a">A</span></td></tr>
+          <tr><td>Respiratory rate</td><td>Very stable night to night; rises with respiratory infection<sup class="ref"><a href="#ref-33">33</a></sup></td><td>Measured during sleep; low noise</td><td>1–3 days</td><td>Deviation from baseline; only surface when elevated</td><td><span class="grade b">B</span></td></tr>
+          <tr><td>Wrist temperature</td><td>Fever and illness; circadian shifts</td><td>The absolute value is meaningless. Deviation from your baseline improved illness detection<sup class="ref"><a href="#ref-34">34</a></sup></td><td>1–3 days</td><td>Deviation strip (°C vs baseline)</td><td><span class="grade b">B</span></td></tr>
+          <tr><td>VO₂max estimate</td><td>Cardiorespiratory fitness, the strongest modifiable mortality predictor: −13% risk per extra MET<sup class="ref"><a href="#ref-37">37</a></sup>; low vs elite HR 5.04<sup class="ref"><a href="#ref-38">38</a></sup></td><td>Apple Watch read 41.4 vs 45.9 mL/kg/min in the lab, ICC 0.47<sup class="ref"><a href="#ref-39">39</a></sup>. Trustworthy as a trend, not a number.</td><td>2–8 weeks</td><td>28-day median trend line; age percentile shown with a caveat</td><td><span class="grade a">A</span> link · <span class="grade b">B</span> device</td></tr>
+          <tr><td>Walking / submax HR</td><td>Heart rate at a fixed submaximal effort. Falls with fitness, rises within weeks of detraining<sup class="ref"><a href="#ref-1">1</a>,<a href="#ref-17">17</a></sup></td><td>Steady-state walking, so optical HR is at its most accurate</td><td>1–4 weeks</td><td>7-day mean, ideally normalized to walking speed</td><td><span class="grade b">B</span></td></tr>
+          <tr><td>HR recovery (1 min)</td><td>Vagal reactivation. A drop of ≤12 bpm after a clinical exercise test predicted mortality (adjusted RR 2.0)<sup class="ref"><a href="#ref-36">36</a></sup></td><td>Measured after everyday workouts, not a standardized test, so compare like with like</td><td>Weeks</td><td>Per-workout dots plus a 60-day trend within workout type</td><td><span class="grade b">B</span></td></tr>
+          <tr><td>Sleep duration &amp; regularity</td><td>≥7 h recommended<sup class="ref"><a href="#ref-42">42</a></sup>; regularity predicted mortality better than duration<sup class="ref"><a href="#ref-44">44</a></sup></td><td>Sleep vs wake: ≥95% sensitivity. Stages are weaker: Apple S8 underestimated deep sleep by 43 min<sup class="ref"><a href="#ref-45">45</a></sup></td><td>Days</td><td>Actogram ("sleep barcode") + Sleep Regularity Index; stages de-emphasized</td><td><span class="grade a">A</span></td></tr>
+          <tr><td>Steps</td><td>Everyday movement volume. Mortality benefit keeps rising to 8–10k/day under 60, 6–8k over 60<sup class="ref"><a href="#ref-41">41</a></sup></td><td>De-duplicated across iPhone + Watch by HealthKit</td><td>Days</td><td>Weekly mean vs your age band's plateau</td><td><span class="grade a">A</span></td></tr>
+          <tr><td>Walking speed</td><td>Gait speed: hazard ratio 0.88 per +0.1 m/s in adults ≥65<sup class="ref"><a href="#ref-40">40</a></sup></td><td>iPhone-measured, low noise</td><td>Months</td><td>Long-horizon trend (most relevant later in life)</td><td><span class="grade a">A</span></td></tr>
+          <tr><td>Training load</td><td>Dose of training: HR-based impulse (TRIMP)<sup class="ref"><a href="#ref-25">25</a></sup> or session RPE × duration<sup class="ref"><a href="#ref-28">28</a></sup></td><td>HR tracks cardio well but underrates strength work; add RPE for lifting</td><td>Continuous</td><td>Daily bars + Fitness / Fatigue / Form lines</td><td><span class="grade b">B</span></td></tr>
+          <tr><td>Active energy</td><td>Estimated calories burned</td><td>No wrist device achieved &lt;20% error in lab validation<sup class="ref"><a href="#ref-46">46</a></sup></td><td>Days</td><td>Relative day-to-day comparisons only; never a calorie budget</td><td><span class="grade c">C</span></td></tr>
+          <tr><td>Weight</td><td>Total mass, dominated day to day by water, glycogen and gut contents<sup class="ref"><a href="#ref-7">7</a></sup></td><td>The scale is accurate; the biology is noisy</td><td>Days (water) / months (tissue)</td><td>Daily dots + Kalman trend with uncertainty band, beside load</td><td><span class="grade a">A</span></td></tr>
+          <tr><td>Body fat % (BIA)</td><td>Estimate derived from electrical impedance, which depends on body water<sup class="ref"><a href="#ref-12">12</a></sup></td><td>Foot-to-foot limits of agreement ≥10 points vs DXA<sup class="ref"><a href="#ref-13">13</a></sup>. More repeatable at the same time of day<sup class="ref"><a href="#ref-14">14</a></sup></td><td>Months</td><td>14–28-day median of standardized morning readings; never a single reading</td><td><span class="grade c">C</span></td></tr>
+          <tr><td>Lean mass (BIA)</td><td>Weight × (1 − body fat %)</td><td>Inherits all the BIA and water error</td><td>Months</td><td>4-week trends only, next to strength or performance data</td><td><span class="grade c">C</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="prose">
+    <!-- ─────────────── Hybrids ─────────────── -->
+    <section id="hybrids">
+      <h2>Hybrid views that paint the whole picture</h2>
+      <p>The goal is what Whoop's Recovery and Strain do, but better: more inputs, every clock represented, uncertainty shown, and each output traceable to the raw data behind it. Four design rules keep hybrids honest:</p>
+      <ul class="tight">
+        <li><strong>Align, don't merge.</strong> Stack metrics as lanes on a shared time axis (Fig. 1). Don't put two units on one chart with two y-axes; that manufactures correlations.</li>
+        <li><strong>Standardize before combining.</strong> Put every input in the same currency, deviation from <em>your</em> baseline in SD units, before any weighted sum. Show which inputs drove the result.</li>
+        <li><strong>Decompose, don't just aggregate.</strong> Splitting weight into water and fat (Fig. 1, bottom lane) explains more than any combined score.</li>
+        <li><strong>Carry uncertainty.</strong> Bands, confidence labels and minimum-data rules. A readiness score from two nights of data is a guess, and should look like one.</li>
+      </ul>
+
+      <h3>The recovery compass</h3>
+      <p>HRV and resting HR usually move in opposite directions, but not always, and the exceptions carry information. Plot 28 days of both as a trail on a two-dimensional map, both in SDs from baseline. Clusters in the upper left mean recovered and adapting. A drift to the lower right means strain or illness. A lower-left drift (both low) matches what Plews and colleagues call HRV "saturation" in heavily trained athletes: HRV falls even as resting HR falls<sup class="ref"><a href="#ref-16">16</a></sup>. That case needs context rather than an alarm.</p>
+    </section>
+  </div>
+
+  <figure id="compass">
+    <div class="fig">
+      <div class="fig-head">
+        <p class="fig-title">Fig. 3 · Recovery compass</p>
+        <span class="fig-note">Simulated · follows the scenario in Fig. 1 · click a day there to send it here</span>
+      </div>
+      <div class="compass-wrap">
+        <div id="compass-chart"></div>
+        <div class="compass-side">
+          <label for="compass-day">28-day window ending on <span id="compass-day-label"></span></label>
+          <input type="range" id="compass-day" min="27" max="83" step="1" value="34">
+          <div class="quad-list">
+            <div><b>Upper left: recovered / adapting</b>HRV above baseline, resting HR below. The best time for quality sessions.</div>
+            <div><b>Lower right: strained or unwell</b>HRV down, resting HR up. Back off, and check respiratory rate and temperature.</div>
+            <div><b>Lower left: deep fatigue or saturation</b>Both below baseline. Ambiguous in well-trained people<sup class="ref"><a href="#ref-16">16</a></sup>; read against load.</div>
+            <div><b>Upper right: mixed</b>Often heat, stress, alcohol or poor sleep. Treat as noise unless it persists.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>Older days fade and the latest day is ringed. Quadrant meanings are interpretive guides built from refs 15–19, not diagnostic categories.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3>Sleep barcode and regularity</h3>
+    <p>Sleep duration charts hide the variable that predicts outcomes best: consistency. The Sleep Regularity Index (SRI) is the probability of being in the same state (asleep or awake) at any two times 24 h apart, scaled from −100 to 100<sup class="ref"><a href="#ref-43">43</a></sup>. In 60,977 UK Biobank participants, the more regular sleepers had 20–48% lower all-cause mortality than the least regular fifth, and regularity out-predicted duration<sup class="ref"><a href="#ref-44">44</a></sup>. An actogram (one row per night) makes irregularity visible at a glance, which a bar chart of hours cannot.</p>
+  </div>
+
+  <figure id="sleep">
+    <div class="fig">
+      <div class="fig-head">
+        <p class="fig-title">Fig. 4 · Sleep barcode: two sleepers with near-identical average duration</p>
+        <span class="fig-note">Simulated · 28 nights · axis runs 6 pm → 2 pm</span>
+      </div>
+      <div class="two-up">
+        <div><h4 id="act-a-title"></h4><div id="act-a"></div></div>
+        <div><h4 id="act-b-title"></h4><div id="act-b"></div></div>
+      </div>
+    </div>
+    <figcaption>SRI is computed here from the simulated minute-level sleep/wake states with the published formula. Staging (deep, REM) is left out on purpose: sleep vs wake is reliable on the wrist, individual stages much less so<sup class="ref"><a href="#ref-45">45</a></sup>.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3>Two more hybrids worth building</h3>
+    <p><strong>Fitness drift detector.</strong> A single lane that plots the Aerobic Fitness Index (below) against 42-day training load. When load falls and walking HR rises for two consecutive weeks, it flags "fitness slipping" before the scale or your next run would tell you. This is your "one day I can barely run a mile" scenario caught three to four weeks early. Its physiological basis is the rapid blood-volume and stroke-volume loss of detraining<sup class="ref"><a href="#ref-1">1</a>,<a href="#ref-3">3</a></sup>.</p>
+    <p><strong>Personal response finder.</strong> Within-person lagged analyses ask which of <em>your</em> behaviors predict <em>your</em> next-day HRV or resting HR: sleep duration, bedtime, late workouts, alcohol tags, travel. Each finding is reported as an effect size with an interval and a minimum sample size, and never as a causal claim. Population effects of everyday stressors on HRV are small (~5%)<sup class="ref"><a href="#ref-19">19</a></sup>, so individual effects need months of data to separate from noise.</p>
+
+    <!-- ─────────────── Scores ─────────────── -->
+    <section id="scores">
+      <h2>Composite scores to build</h2>
+      <p>Seven outputs, each with the question it answers, how it's computed, its evidence grade and what it will <em>not</em> claim. Thresholds marked "starting" are defaults to calibrate against your history.</p>
+
+      <div class="spec">
+        <article class="spec-item">
+          <header><h3>Readiness</h3><span class="grade b">B</span></header>
+          <p class="q">Has my nervous system recovered enough for hard training today?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Nightly HRV (Whoop RMSSD preferred; Apple SDNN fallback, never mixed), resting HR, respiratory-rate deviation, wrist-temperature deviation, sleep vs need, sleep regularity</dd>
+            <dt>Method</dt><dd>Robust z-score of each input vs a 60-day baseline that excludes the last 7 days. HRV log-transformed; its 7-day mean compared with a smallest-worthwhile-change band of ±0.5 SD, as in HRV-guided trials<sup class="ref"><a href="#ref-15">15</a>,<a href="#ref-21">21</a></sup>. Weighted sum with HRV the largest weight, and each input's contribution shown.</dd>
+            <dt>Output</dt><dd>Ready / Normal / Hold back, with contributors and a confidence level based on data completeness</dd>
+            <dt>Evidence</dt><dd>HRV-guided training improves submaximal physiology (g ≈ 0.30) but shows no significant VO₂peak or performance advantage<sup class="ref"><a href="#ref-23">23</a>,<a href="#ref-24">24</a></sup>; individual RCTs were positive<sup class="ref"><a href="#ref-20">20</a>–<a href="#ref-22">22</a></sup></dd>
+            <dt>Won't claim</dt><dd>That a low score means you shouldn't move at all, or that a high score predicts a PR</dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Load &amp; Form</h3><span class="grade b">B</span></header>
+          <p class="q">How much training have I absorbed, and how fresh am I?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Raw heart rate during workouts (TRIMP), session RPE × minutes for strength work<sup class="ref"><a href="#ref-28">28</a></sup>, and optionally Apple's effort ratings</dd>
+            <dt>Method</dt><dd>Fitness = 42-day exponentially weighted average of daily load; Fatigue = 7-day; Form = Fitness − Fatigue. This is the practical form of the Banister impulse-response model<sup class="ref"><a href="#ref-25">25</a></sup>. The constants are shown and editable.</dd>
+            <dt>Output</dt><dd>Fitness, Fatigue and Form lines (Fig. 1, top lane) and the weekly ramp rate in Fitness points</dd>
+            <dt>Evidence</dt><dd>The model fits group data, but individual time constants are poorly identified: one elite-swimmer study found a 95% CI of 17–59 days<sup class="ref"><a href="#ref-26">26</a></sup>. Banister-type and variable dose-response models ranked best among six compared<sup class="ref"><a href="#ref-27">27</a></sup>.</dd>
+            <dt>Won't claim</dt><dd>Injury risk from an acute:chronic ratio. The causal basis for that isn't established<sup class="ref"><a href="#ref-29">29</a></sup>.</dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Aerobic Fitness Index</h3><span class="grade c">C</span></header>
+          <p class="q">Is my engine getting stronger, holding or slipping?</p>
+          <dl>
+            <dt>Inputs</dt><dd>VO₂max estimate (28-day median), walking HR average, pace or speed per heartbeat on similar workouts, 1-minute HR recovery, resting HR trend</dd>
+            <dt>Method</dt><dd>Direction-aligned z-scores (lower walking HR = better), averaged, with a 90% interval. The trend slope over 21 and 42 days gives the "gaining / holding / slipping" label.</dd>
+            <dt>Evidence</dt><dd>Fitness itself is <span class="grade a">A</span>-grade prognostic<sup class="ref"><a href="#ref-37">37</a>,<a href="#ref-38">38</a></sup>; submaximal HR as a training marker is <span class="grade b">B</span><sup class="ref"><a href="#ref-1">1</a>,<a href="#ref-17">17</a></sup>; the specific composite is new and needs validating</dd>
+            <dt>Won't claim</dt><dd>A lab-grade VO₂max. The wrist estimate runs low and agrees only moderately for individuals<sup class="ref"><a href="#ref-39">39</a></sup>.</dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Body Composition Signal</h3><span class="grade c">C</span></header>
+          <p class="q">Under the water noise, is tissue actually changing?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Daily weight (Wyze), body fat % and lean mass (Wyze via HealthKit), plus Load &amp; Form</dd>
+            <dt>Method</dt><dd>A state-space model: weight = tissue + water + noise. Tissue drifts slowly. Water is modelled from training (a Fitness term for plasma and glycogen, and a Fatigue-minus-Fitness term for new-load swelling), with coefficients fitted to your own history. BF% is reported as a 14–28-day median of standardized morning readings only.</dd>
+            <dt>Output</dt><dd>Estimated tissue change with an interval, and a "water-inflated" or "water-masked" flag when load explains the scale's movement</dd>
+            <dt>Evidence</dt><dd>The physiology is <span class="grade a">A</span>/<span class="grade b">B</span><sup class="ref"><a href="#ref-5">5</a>,<a href="#ref-7">7</a>,<a href="#ref-8">8</a></sup>; the decomposition model is new and must beat plain smoothing on held-out data before it ships</dd>
+            <dt>Won't claim</dt><dd>DXA-grade body fat. Consumer BIA can be ≥10 points off for an individual<sup class="ref"><a href="#ref-13">13</a></sup>.</dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Adaptation State</h3><span class="grade c">C</span></header>
+          <p class="q">Taking every clock into account, what is my body doing right now?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Fitness trend, Form, HRV and resting-HR z-scores, walking-HR change, nightly illness flags</dd>
+            <dt>Method</dt><dd>Ordered rules (starting thresholds): <b>Possible illness</b> if resting HR z ≥ 2 and HRV z ≤ −1 on two consecutive nights. <b>Detraining</b> if Fitness fell &gt;12 in 21 days and walking HR rose &gt;3 bpm. <b>Strained</b> if Form &lt; −15 and HRV z &lt; −0.5. <b>Building</b> if Fitness rose &gt;5 in 14 days with HRV holding. <b>Absorbing</b> if Form &lt; −10. <b>Freshening</b> if Form &gt; 10. Otherwise <b>Maintaining</b>.</dd>
+            <dt>Output</dt><dd>The state ribbon in Fig. 1, with a plain-language reason for each day</dd>
+            <dt>Evidence</dt><dd>Overreaching and overtraining have no single diagnostic marker<sup class="ref"><a href="#ref-30">30</a></sup>. This is a hypothesis to test against your training history and how you actually performed.</dd>
+            <dt>Won't claim</dt><dd>Overtraining syndrome, which is a clinical diagnosis of exclusion<sup class="ref"><a href="#ref-30">30</a></sup></dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Illness Watch</h3><span class="grade b">B</span></header>
+          <p class="q">Is my body responding as if it's fighting something?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Nightly resting HR, HRV, respiratory rate, wrist temperature, sleep duration</dd>
+            <dt>Method</dt><dd>Requires ≥2 signals to agree (starting thresholds): resting HR z ≥ 2 on two consecutive nights, respiratory rate ≥ +1 breath/min, wrist temperature ≥ +0.5 °C, HRV z ≤ −1.5. Runs a cumulative-sum detector on resting-HR residuals.</dd>
+            <dt>Evidence</dt><dd>63% of COVID-19 cases were detectable before symptoms in real time from resting HR<sup class="ref"><a href="#ref-31">31</a></sup>; sensor plus symptom data reached AUC 0.80<sup class="ref"><a href="#ref-32">32</a></sup>; adding temperature raised AUC 4.9% and detected cases 2.75 days before testing<sup class="ref"><a href="#ref-34">34</a></sup>; population resting HR and sleep tracked influenza-like illness<sup class="ref"><a href="#ref-35">35</a></sup></dd>
+            <dt>Won't claim</dt><dd>Any diagnosis. The wording stays "consistent with illness" plus a nudge to rest and watch for symptoms.</dd>
+          </dl>
+        </article>
+
+        <article class="spec-item">
+          <header><h3>Sleep Health</h3><span class="grade a">A</span></header>
+          <p class="q">Am I getting enough sleep, at consistent times?</p>
+          <dl>
+            <dt>Inputs</dt><dd>Sleep and wake windows, duration, sleep midpoint</dd>
+            <dt>Method</dt><dd>Duration vs the ≥7 h consensus<sup class="ref"><a href="#ref-42">42</a></sup>, SRI over 14 and 28 days<sup class="ref"><a href="#ref-43">43</a></sup>, midpoint drift; stages shown as secondary context only</dd>
+            <dt>Evidence</dt><dd>Duration and regularity are both linked to mortality, regularity more strongly<sup class="ref"><a href="#ref-44">44</a></sup></dd>
+            <dt>Won't claim</dt><dd>Precise deep or REM minutes<sup class="ref"><a href="#ref-45">45</a></sup></dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <!-- ─────────────── Compare ─────────────── -->
+    <section id="compare">
+      <h2>How this compares with Whoop and Apple</h2>
+      <p>Whoop's <strong>Recovery</strong> (0–100%) draws most of its signal from HRV, with resting HR, sleep performance and respiratory rate adding context<sup class="ref"><a href="#ref-52">52</a></sup>. Its <strong>Strain</strong> is a logarithmic 0–21 score built from time in personal heart-rate zones, plus a muscular-load estimate for lifting<sup class="ref"><a href="#ref-51">51</a></sup>. Apple's <strong>Training Load</strong> is a duration-weighted average of workout effort ratings (1–10, auto-estimated for cardio from heart rate, pace, elevation and your profile), comparing the last 7 days with the last 28<sup class="ref"><a href="#ref-49">49</a>,<a href="#ref-50">50</a></sup>.</p>
+    </section>
+  </div>
+
+  <div class="fig" style="margin-bottom:32px">
+    <div class="table-wrap">
+      <table style="min-width:760px">
+        <thead><tr><th>Question</th><th>Whoop</th><th>Apple</th><th>Ultra Health plan</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Am I recovered?</strong></td><td>Recovery %; HRV-led; proprietary weights</td><td>Vitals app flags overnight outliers<sup class="ref"><a href="#ref-50">50</a></sup></td><td>Readiness with visible contributors, confidence and per-source HRV. Whoop's standardized nocturnal RMSSD becomes the preferred HRV input once the API is connected.</td></tr>
+          <tr><td><strong>How hard have I trained?</strong></td><td>Strain 0–21 (HR zones + muscular load)</td><td>Training Load, 7 vs 28 days (effort × duration)</td><td>Fitness / Fatigue / Form from TRIMP + RPE, with editable time constants</td></tr>
+          <tr><td><strong>Is my fitness improving?</strong></td><td>Not a core score</td><td>VO₂max estimate (Cardio Fitness)</td><td>Aerobic Fitness Index: VO₂max trend + walking HR + HR recovery + efficiency</td></tr>
+          <tr><td><strong>Is my body composition changing?</strong></td><td>No</td><td>Shows scale data; no interpretation</td><td>Body Composition Signal: tissue vs water, driven by training load</td></tr>
+          <tr><td><strong>How do these interact?</strong></td><td>Separate dials</td><td>Separate apps</td><td>Adaptation timeline + state ribbon across all three clocks</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="prose">
+    <!-- ─────────────── Methods ─────────────── -->
+    <section id="methods">
+      <h2>Methods: the statistics behind the pictures</h2>
+
+      <h3>Personal baselines and meaningful change</h3>
+      <p>Every metric is interpreted against your own history. Use a 60-day rolling window that excludes the most recent 7 days, so a sudden change doesn't dilute its own reference. Use robust statistics (median and MAD) so one bad night doesn't distort the baseline:</p>
+      <code class="formula">z = (x − median₆₀) / (1.4826 × MAD₆₀)</code>
+      <p>A change is only "real" when it exceeds the measurement's typical error, the SD of your repeated measurements<sup class="ref"><a href="#ref-47">47</a></sup>. Buchheit recommends interpreting each change against both the error of measurement and the smallest important change<sup class="ref"><a href="#ref-17">17</a></sup>. For HRV, the usual practical rule is a band of ±0.5 SD around the baseline mean<sup class="ref"><a href="#ref-21">21</a></sup>. Avoid "magnitude-based inference", which doesn't deliver the error rates its proponents claimed<sup class="ref"><a href="#ref-48">48</a></sup>. Use plain intervals instead.</p>
+
+      <h3>How long until the scale can tell you anything</h3>
+      <p>Suppose day-to-day weight noise is σ ≈ 0.5 kg and you want to detect a real 0.5 kg change. A single reading can't separate the two. Averaging n days shrinks noise to σ/√n, so comparing two 7-day means gives a difference SE of 0.5 × √(2/7) ≈ 0.27 kg. A 0.5 kg change is then only ~1.9 SE, and that assumes no water swing. Add a training-induced water shift of ±1 kg and you need either weeks of data or a model that accounts for water. That is the case for the state-space approach.</p>
+
+      <h3>State-space smoothing and decomposition (the scale)</h3>
+      <code class="formula">tissueₜ = tissueₜ₋₁ + ηₜ                      η ~ N(0, q),  q ≈ 0.03–0.06 kg/day
+waterₜ  = β₁·(Fitnessₜ − Fitness_ref) + β₂·max(0, Fatigueₜ − Fitnessₜ)
+weightₜ = tissueₜ + waterₜ + εₜ                ε ~ N(0, r),  r ≈ 0.4–0.6 kg</code>
+      <p>A Kalman filter gives the real-time trend with an uncertainty band (Fig. 1, weight lane). The β coefficients are fitted to your own history and must beat plain smoothing on held-out weeks before the decomposition is shown as fact. Until then it is labelled "model estimate".</p>
+
+      <h3>Training impulse and the fitness–fatigue model</h3>
+      <code class="formula">TRIMP   = minutes × HRr × 0.64·e^(1.92·HRr)   (men; 0.86·e^(1.67·HRr) women)
+HRr     = (HR_exercise − HR_rest) / (HR_max − HR_rest)
+Fitness = Fitnessₜ₋₁ + (Loadₜ − Fitnessₜ₋₁) / 42
+Fatigue = Fatigueₜ₋₁ + (Loadₜ − Fatigueₜ₋₁) / 7
+Form    = Fitness − Fatigue</code>
+      <p>This is the Banister impulse-response family<sup class="ref"><a href="#ref-25">25</a></sup>. Fitting personal time constants is tempting but ill-conditioned: parameters trade off against each other and confidence intervals are wide<sup class="ref"><a href="#ref-26">26</a></sup>. Fit them with regularization toward the defaults (42 and 7 days) and show the uncertainty.</p>
+
+      <h3>Change-points, anomalies and N-of-1 analysis</h3>
+      <ul class="tight">
+        <li><strong>Change-point detection</strong> (e.g. Bayesian online change-point detection<sup class="ref"><a href="#ref-53">53</a></sup>) marks regime shifts: a new Apple Watch generation, a training block, a move. Baselines reset at confirmed change-points rather than smearing across them.</li>
+        <li><strong>Anomaly detection</strong> for illness uses a cumulative-sum statistic on resting-HR residuals, requiring agreement from a second signal to keep false alarms rare.</li>
+        <li><strong>N-of-1 effects</strong> use within-person lagged regression with centering and shrinkage toward zero, reported with intervals. Confounding is the default assumption, so language stays associational.</li>
+      </ul>
+
+      <h3>Validation before anything ships</h3>
+      <p>Each score is back-tested on your 2+ years of Health export before it appears in the app. Does "Strained" precede workouts where heart rate ran high for the pace? Does "Detraining" precede drops in the VO₂max estimate? Does "Possible illness" line up with the days you were sick? Every score keeps a log of what it predicted and what happened, so its calibration is visible to you.</p>
+    </section>
+
+    <!-- ─────────────── Pitfalls ─────────────── -->
+    <section id="pitfalls">
+      <h2>Pitfalls and guardrails</h2>
+      <ul class="tight">
+        <li><strong>Absolute numbers from wrist sensors.</strong> Use VO₂max, deep-sleep minutes, calories and BIA body fat as trends only<sup class="ref"><a href="#ref-39">39</a>,<a href="#ref-45">45</a>,<a href="#ref-46">46</a>,<a href="#ref-13">13</a></sup>.</li>
+        <li><strong>Mixing sources.</strong> Apple SDNN ≠ Whoop RMSSD; Apple daytime resting HR ≠ Whoop sleeping resting HR. The app already keeps them apart by source.</li>
+        <li><strong>Acute:chronic ratios as injury predictors.</strong> Widely marketed, causally unsupported<sup class="ref"><a href="#ref-29">29</a></sup>.</li>
+        <li><strong>Regression to the mean.</strong> An extreme day is usually followed by a more normal one, whatever you did. Never credit an intervention from one bounce.</li>
+        <li><strong>Alert fatigue.</strong> Require agreement between signals and persistence over nights before notifying. A wrong alarm costs more trust than a missed one.</li>
+        <li><strong>Unstandardized weigh-ins.</strong> BIA readings are most repeatable at the same time of day<sup class="ref"><a href="#ref-14">14</a></sup>. Morning, after the bathroom, before food or water.</li>
+        <li><strong>Heart-rate recovery comparisons.</strong> Clinical HRR thresholds come from standardized treadmill tests<sup class="ref"><a href="#ref-36">36</a></sup>; after-workout HRR only compares within similar workouts.</li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── Inputs ─────────────── -->
+    <section id="inputs">
+      <h2>Inputs that would sharpen the picture most</h2>
+      <ul class="tight">
+        <li><strong>A standardized morning weigh-in</strong>: same time, after voiding, before eating. The single biggest improvement to scale data, and free<sup class="ref"><a href="#ref-14">14</a></sup>.</li>
+        <li><strong>One-tap session RPE</strong> (0–10) after strength sessions, since heart rate underrates lifting. Session RPE is valid across exercise types<sup class="ref"><a href="#ref-28">28</a></sup>.</li>
+        <li><strong>A monthly benchmark</strong>, e.g. 20 minutes at a fixed easy pace or a timed mile walk. Heart rate at a fixed pace is the cleanest fitness signal you can collect at home<sup class="ref"><a href="#ref-17">17</a></sup>.</li>
+        <li><strong>Whoop API</strong> for nocturnal RMSSD, Recovery and Strain. HRV is not written to Apple Health<sup class="ref"><a href="#ref-54">54</a></sup>.</li>
+        <li><strong>Lightweight tags</strong>: alcohol, late meal, travel, symptoms. These power the personal response finder.</li>
+        <li><strong>An occasional DXA scan</strong> (every 3–6 months) to calibrate the scale's body-fat estimate against a reference.</li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── Roadmap ─────────────── -->
+    <section id="roadmap">
+      <h2>Build roadmap</h2>
+      <ul class="tight">
+        <li><strong>Phase 1: compute core</strong> (<code>packages/core</code>). EWMA Fitness/Fatigue/Form, TRIMP from workout heart rate, robust baselines, the Kalman weight filter and SRI. Unit-tested, then back-tested on your full export in <code>data/</code>.</li>
+        <li><strong>Phase 2: visuals</strong> (<code>apps/mobile</code>). Native Skia implementations of the adaptation timeline, recovery compass and sleep barcode, with the same interaction model as these figures.</li>
+        <li><strong>Phase 3: Whoop API.</strong> Nocturnal RMSSD becomes the Readiness HRV source; compare its Recovery with ours side by side.</li>
+        <li><strong>Phase 4: personal models.</strong> Fitted water coefficients, regularized fitness–fatigue constants, the personal response finder and the prediction log.</li>
+      </ul>
+      <p class="footer-note">This brief is for education and personal training decisions, not medical diagnosis. Sudden or persistent changes in resting heart rate, oxygen saturation or breathing, or any symptoms, belong with a clinician.</p>
+    </section>
+
+    <!-- ─────────────── References ─────────────── -->
+    <section id="refs">
+      <h2>References</h2>
+      <p class="ui" style="font-size:14px;color:var(--muted)">Citations 1–48 were retrieved and checked against PubMed on 23 September 2026. Links point to the DOI where one exists, otherwise to PubMed.</p>
+      <ol class="refs">
+        <li id="ref-1">Coyle EF, Hemmert MK, Coggan AR. Effects of detraining on cardiovascular responses to exercise: role of blood volume. <i>J Appl Physiol</i>. 1986;60:95–99. <a href="https://doi.org/10.1152/jappl.1986.60.1.95">doi:10.1152/jappl.1986.60.1.95</a></li>
+        <li id="ref-2">Coyle EF, Martin WH, Sinacore DR, et al. Time course of loss of adaptations after stopping prolonged intense endurance training. <i>J Appl Physiol</i>. 1984;57:1857–64. <a href="https://doi.org/10.1152/jappl.1984.57.6.1857">doi:10.1152/jappl.1984.57.6.1857</a></li>
+        <li id="ref-3">Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part I. <i>Sports Med</i>. 2000;30:79–87. <a href="https://doi.org/10.2165/00007256-200030020-00002">doi:10.2165/00007256-200030020-00002</a></li>
+        <li id="ref-4">Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part II. <i>Sports Med</i>. 2000;30:145–54. <a href="https://doi.org/10.2165/00007256-200030030-00001">doi:10.2165/00007256-200030030-00001</a></li>
+        <li id="ref-5">Convertino VA. Blood volume: its adaptation to endurance training. <i>Med Sci Sports Exerc</i>. 1991;23:1338–48. <a href="https://pubmed.ncbi.nlm.nih.gov/1798375/">PMID 1798375</a></li>
+        <li id="ref-6">Mack GW, Thompson CA, Doerr DF, Nadel ER, Convertino VA. Diminished baroreflex control of forearm vascular resistance following training. <i>Med Sci Sports Exerc</i>. 1991;23:1367–74. <a href="https://pubmed.ncbi.nlm.nih.gov/1798379/">PMID 1798379</a></li>
+        <li id="ref-7">Kreitzman SN, Coxon AY, Szaz KF. Glycogen storage: illusions of easy weight loss, excessive weight regain, and distortions in estimates of body composition. <i>Am J Clin Nutr</i>. 1992;56:292S–293S. <a href="https://doi.org/10.1093/ajcn/56.1.292S">doi:10.1093/ajcn/56.1.292S</a></li>
+        <li id="ref-8">Damas F, Phillips SM, Lixandrão ME, et al. Early resistance training-induced increases in muscle cross-sectional area are concomitant with edema-induced muscle swelling. <i>Eur J Appl Physiol</i>. 2016;116:49–56. <a href="https://doi.org/10.1007/s00421-015-3243-4">doi:10.1007/s00421-015-3243-4</a></li>
+        <li id="ref-9">Clarkson PM, Hubal MJ. Exercise-induced muscle damage in humans. <i>Am J Phys Med Rehabil</i>. 2002;81:S52–69. <a href="https://doi.org/10.1097/00002060-200211001-00007">doi:10.1097/00002060-200211001-00007</a></li>
+        <li id="ref-10">Hall KD, Sacks G, Chandramohan D, et al. Quantification of the effect of energy imbalance on bodyweight. <i>Lancet</i>. 2011;378:826–37. <a href="https://doi.org/10.1016/S0140-6736(11)60812-X">doi:10.1016/S0140-6736(11)60812-X</a></li>
+        <li id="ref-11">Thomas DM, Gonzalez MC, Pereira AZ, Redman LM, Heymsfield SB. Can a weight loss of one pound a week be achieved with a 3500-kcal deficit? <i>Int J Obes</i>. 2013;37:1611–3. <a href="https://doi.org/10.1038/ijo.2013.51">doi:10.1038/ijo.2013.51</a></li>
+        <li id="ref-12">Kyle UG, Bosaeus I, De Lorenzo AD, et al. Bioelectrical impedance analysis—part I: review of principles and methods. <i>Clin Nutr</i>. 2004;23:1226–43. <a href="https://doi.org/10.1016/j.clnu.2004.06.004">doi:10.1016/j.clnu.2004.06.004</a></li>
+        <li id="ref-13">Demura S, Sato S. Comparisons of accuracy of estimating percent body fat by four bioelectrical impedance devices with different frequency and induction system of electrical current. <i>J Sports Med Phys Fitness</i>. 2015;55:68–75. <a href="https://pubmed.ncbi.nlm.nih.gov/25642685/">PMID 25642685</a></li>
+        <li id="ref-14">Parker H, Hunt ET, Brazendale K, et al. Accuracy and precision of opportunistic measures of body composition from the Tanita DC-430U. <i>Child Obes</i>. 2023;19:470–478. <a href="https://doi.org/10.1089/chi.2022.0084">doi:10.1089/chi.2022.0084</a></li>
+        <li id="ref-15">Plews DJ, Laursen PB, Kilding AE, Buchheit M. Heart rate variability in elite triathletes, is variation in variability the key to effective training? A case comparison. <i>Eur J Appl Physiol</i>. 2012;112:3729–41. <a href="https://doi.org/10.1007/s00421-012-2354-4">doi:10.1007/s00421-012-2354-4</a></li>
+        <li id="ref-16">Plews DJ, Laursen PB, Stanley J, Kilding AE, Buchheit M. Training adaptation and heart rate variability in elite endurance athletes: opening the door to effective monitoring. <i>Sports Med</i>. 2013;43:773–81. <a href="https://doi.org/10.1007/s40279-013-0071-8">doi:10.1007/s40279-013-0071-8</a></li>
+        <li id="ref-17">Buchheit M. Monitoring training status with HR measures: do all roads lead to Rome? <i>Front Physiol</i>. 2014;5:73. <a href="https://doi.org/10.3389/fphys.2014.00073">doi:10.3389/fphys.2014.00073</a></li>
+        <li id="ref-18">Stanley J, Peake JM, Buchheit M. Cardiac parasympathetic reactivation following exercise: implications for training prescription. <i>Sports Med</i>. 2013;43:1259–77. <a href="https://doi.org/10.1007/s40279-013-0083-4">doi:10.1007/s40279-013-0083-4</a></li>
+        <li id="ref-19">Altini M, Plews D. What is behind changes in resting heart rate and heart rate variability? A large-scale analysis of longitudinal measurements acquired in free-living. <i>Sensors</i>. 2021;21:7932. <a href="https://doi.org/10.3390/s21237932">doi:10.3390/s21237932</a></li>
+        <li id="ref-20">Kiviniemi AM, Hautala AJ, Kinnunen H, Tulppo MP. Endurance training guided individually by daily heart rate variability measurements. <i>Eur J Appl Physiol</i>. 2007;101:743–51. <a href="https://doi.org/10.1007/s00421-007-0552-2">doi:10.1007/s00421-007-0552-2</a></li>
+        <li id="ref-21">Vesterinen V, Nummela A, Heikura I, et al. Individual endurance training prescription with heart rate variability. <i>Med Sci Sports Exerc</i>. 2016;48:1347–54. <a href="https://doi.org/10.1249/MSS.0000000000000910">doi:10.1249/MSS.0000000000000910</a></li>
+        <li id="ref-22">Javaloyes A, Sarabia JM, Lamberts RP, Moya-Ramon M. Training prescription guided by heart-rate variability in cycling. <i>Int J Sports Physiol Perform</i>. 2019;14:23–32. <a href="https://doi.org/10.1123/ijspp.2018-0122">doi:10.1123/ijspp.2018-0122</a></li>
+        <li id="ref-23">Düking P, Zinner C, Trabelsi K, et al. Monitoring and adapting endurance training on the basis of heart rate variability monitored by wearable technologies: a systematic review with meta-analysis. <i>J Sci Med Sport</i>. 2021;24:1180–92. <a href="https://doi.org/10.1016/j.jsams.2021.04.012">doi:10.1016/j.jsams.2021.04.012</a></li>
+        <li id="ref-24">Manresa-Rocamora A, Sarabia JM, Javaloyes A, Flatt AA, Moya-Ramón M. Heart rate variability-guided training for enhancing cardiac-vagal modulation, aerobic fitness, and endurance performance: a methodological systematic review with meta-analysis. <i>Int J Environ Res Public Health</i>. 2021;18:10299. <a href="https://doi.org/10.3390/ijerph181910299">doi:10.3390/ijerph181910299</a></li>
+        <li id="ref-25">Morton RH, Fitz-Clarke JR, Banister EW. Modeling human performance in running. <i>J Appl Physiol</i>. 1990;69:1171–7. <a href="https://doi.org/10.1152/jappl.1990.69.3.1171">doi:10.1152/jappl.1990.69.3.1171</a></li>
+        <li id="ref-26">Hellard P, Avalos M, Lacoste L, et al. Assessing the limitations of the Banister model in monitoring training. <i>J Sports Sci</i>. 2006;24:509–20. <a href="https://doi.org/10.1080/02640410500244697">doi:10.1080/02640410500244697</a></li>
+        <li id="ref-27">Busso T, et al. Validity and accuracy of impulse-response models for modeling and predicting training effects on performance of swimmers. <i>Med Sci Sports Exerc</i>. 2023;55:1274–85. <a href="https://doi.org/10.1249/MSS.0000000000003139">doi:10.1249/MSS.0000000000003139</a></li>
+        <li id="ref-28">Foster C, Florhaug JA, Franklin J, et al. A new approach to monitoring exercise training. <i>J Strength Cond Res</i>. 2001;15:109–15. <a href="https://pubmed.ncbi.nlm.nih.gov/11708692/">PMID 11708692</a></li>
+        <li id="ref-29">Impellizzeri FM, Tenan MS, Kempton T, Novak A, Coutts AJ. Acute:chronic workload ratio: conceptual issues and fundamental pitfalls. <i>Int J Sports Physiol Perform</i>. 2020;15:907–913. <a href="https://doi.org/10.1123/ijspp.2019-0864">doi:10.1123/ijspp.2019-0864</a></li>
+        <li id="ref-30">Meeusen R, Duclos M, Foster C, et al. Prevention, diagnosis, and treatment of the overtraining syndrome: joint consensus statement of the ECSS and ACSM. <i>Med Sci Sports Exerc</i>. 2013;45:186–205. <a href="https://doi.org/10.1249/MSS.0b013e318279a10a">doi:10.1249/MSS.0b013e318279a10a</a></li>
+        <li id="ref-31">Mishra T, Wang M, Metwally AA, et al. Pre-symptomatic detection of COVID-19 from smartwatch data. <i>Nat Biomed Eng</i>. 2020;4:1208–20. <a href="https://doi.org/10.1038/s41551-020-00640-6">doi:10.1038/s41551-020-00640-6</a></li>
+        <li id="ref-32">Quer G, Radin JM, Gadaleta M, et al. Wearable sensor data and self-reported symptoms for COVID-19 detection. <i>Nat Med</i>. 2021;27:73–77. <a href="https://doi.org/10.1038/s41591-020-1123-x">doi:10.1038/s41591-020-1123-x</a></li>
+        <li id="ref-33">Natarajan A, Su HW, Heneghan C. Assessment of physiological signs associated with COVID-19 measured using wearable devices. <i>NPJ Digit Med</i>. 2020;3:156. <a href="https://doi.org/10.1038/s41746-020-00363-7">doi:10.1038/s41746-020-00363-7</a></li>
+        <li id="ref-34">Mason AE, Hecht FM, Davis SK, et al. Detection of COVID-19 using multimodal data from a wearable device: results from the first TemPredict Study. <i>Sci Rep</i>. 2022;12:3463. <a href="https://doi.org/10.1038/s41598-022-07314-0">doi:10.1038/s41598-022-07314-0</a></li>
+        <li id="ref-35">Radin JM, Wineinger NE, Topol EJ, Steinhubl SR. Harnessing wearable device data to improve state-level real-time surveillance of influenza-like illness in the USA. <i>Lancet Digit Health</i>. 2020;2:e85–e93. <a href="https://doi.org/10.1016/S2589-7500(19)30222-5">doi:10.1016/S2589-7500(19)30222-5</a></li>
+        <li id="ref-36">Cole CR, Blackstone EH, Pashkow FJ, Snader CE, Lauer MS. Heart-rate recovery immediately after exercise as a predictor of mortality. <i>N Engl J Med</i>. 1999;341:1351–7. <a href="https://doi.org/10.1056/NEJM199910283411804">doi:10.1056/NEJM199910283411804</a></li>
+        <li id="ref-37">Kodama S, Saito K, Tanaka S, et al. Cardiorespiratory fitness as a quantitative predictor of all-cause mortality and cardiovascular events in healthy men and women: a meta-analysis. <i>JAMA</i>. 2009;301:2024–35. <a href="https://doi.org/10.1001/jama.2009.681">doi:10.1001/jama.2009.681</a></li>
+        <li id="ref-38">Mandsager K, Harb S, Cremer P, et al. Association of cardiorespiratory fitness with long-term mortality among adults undergoing exercise treadmill testing. <i>JAMA Netw Open</i>. 2018;1:e183605. <a href="https://doi.org/10.1001/jamanetworkopen.2018.3605">doi:10.1001/jamanetworkopen.2018.3605</a></li>
+        <li id="ref-39">Caserman P, Yum S, Göbel S, Reif A, Matura S. Assessing the accuracy of smartwatch-based estimation of maximum oxygen uptake using the Apple Watch Series 7: validation study. <i>JMIR Biomed Eng</i>. 2024;9:e59459. <a href="https://doi.org/10.2196/59459">doi:10.2196/59459</a></li>
+        <li id="ref-40">Studenski S, Perera S, Patel K, et al. Gait speed and survival in older adults. <i>JAMA</i>. 2011;305:50–8. <a href="https://doi.org/10.1001/jama.2010.1923">doi:10.1001/jama.2010.1923</a></li>
+        <li id="ref-41">Paluch AE, Bajpai S, Bassett DR, et al. Daily steps and all-cause mortality: a meta-analysis of 15 international cohorts. <i>Lancet Public Health</i>. 2022;7:e219–e228. <a href="https://doi.org/10.1016/S2468-2667(21)00302-9">doi:10.1016/S2468-2667(21)00302-9</a></li>
+        <li id="ref-42">Watson NF, Badr MS, Belenky G, et al. Recommended amount of sleep for a healthy adult: a joint consensus statement of the AASM and SRS. <i>Sleep</i>. 2015;38:843–4. <a href="https://doi.org/10.5665/sleep.4716">doi:10.5665/sleep.4716</a></li>
+        <li id="ref-43">Phillips AJK, Clerx WM, O'Brien CS, et al. Irregular sleep/wake patterns are associated with poorer academic performance and delayed circadian and sleep/wake timing. <i>Sci Rep</i>. 2017;7:3216. <a href="https://doi.org/10.1038/s41598-017-03171-4">doi:10.1038/s41598-017-03171-4</a></li>
+        <li id="ref-44">Windred DP, Burns AC, Lane JM, et al. Sleep regularity is a stronger predictor of mortality risk than sleep duration: a prospective cohort study. <i>Sleep</i>. 2024;47:zsad253. <a href="https://doi.org/10.1093/sleep/zsad253">doi:10.1093/sleep/zsad253</a></li>
+        <li id="ref-45">Robbins R, Weaver MD, Sullivan JP, et al. Accuracy of three commercial wearable devices for sleep tracking in healthy adults. <i>Sensors</i>. 2024;24:6532. <a href="https://doi.org/10.3390/s24206532">doi:10.3390/s24206532</a></li>
+        <li id="ref-46">Shcherbina A, Mattsson CM, Waggott D, et al. Accuracy in wrist-worn, sensor-based measurements of heart rate and energy expenditure in a diverse cohort. <i>J Pers Med</i>. 2017;7:3. <a href="https://doi.org/10.3390/jpm7020003">doi:10.3390/jpm7020003</a></li>
+        <li id="ref-47">Hopkins WG. Measures of reliability in sports medicine and science. <i>Sports Med</i>. 2000;30:1–15. <a href="https://doi.org/10.2165/00007256-200030010-00001">doi:10.2165/00007256-200030010-00001</a></li>
+        <li id="ref-48">Sainani KL. The problem with "magnitude-based inference". <i>Med Sci Sports Exerc</i>. 2018;50:2166–76. <a href="https://doi.org/10.1249/MSS.0000000000001645">doi:10.1249/MSS.0000000000001645</a></li>
+        <li id="ref-49">Apple. Track your training load on Apple Watch. Apple Support. <a href="https://support.apple.com/guide/watch/track-your-training-load-apde4c07a6cf/watchos">support.apple.com</a></li>
+        <li id="ref-50">Apple Newsroom. watchOS 11 brings powerful health and fitness insights. June 2024. <a href="https://www.apple.com/newsroom/2024/06/watchos-11-brings-powerful-health-and-fitness-insights/">apple.com/newsroom</a></li>
+        <li id="ref-51">WHOOP. WHOOP Strain. WHOOP Support. <a href="https://support.whoop.com/hc/en-us/articles/360019453214-WHOOP-Strain">support.whoop.com</a></li>
+        <li id="ref-52">WHOOP. How does WHOOP Recovery work? The Locker. <a href="https://www.whoop.com/us/en/thelocker/how-does-whoop-recovery-work-101/">whoop.com</a></li>
+        <li id="ref-53">Adams RP, MacKay DJC. Bayesian online changepoint detection. arXiv:0710.3742. 2007. <a href="https://arxiv.org/abs/0710.3742">arxiv.org/abs/0710.3742</a></li>
+        <li id="ref-54">WHOOP. Apple Health Integration. WHOOP Support. <a href="https://support.whoop.com/hc/en-us/articles/4413142119195-Apple-Health-Integration">support.whoop.com</a></li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (sel) => document.querySelector(sel);
+  const svgEl = (tag, attrs, parent) => {
+    const node = document.createElementNS(NS, tag);
+    for (const key in attrs) node.setAttribute(key, attrs[key]);
+    if (parent) parent.appendChild(node);
+    return node;
+  };
+  const clear = (node) => { while (node.firstChild) node.removeChild(node.firstChild); };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // ── Deterministic randomness ─────────────────────────────────────────────
+  function mulberry32(seed) {
+    return () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gaussian(rand) {
+    let spare = null;
+    return () => {
+      if (spare !== null) { const s = spare; spare = null; return s; }
+      let u = 0;
+      while (u === 0) u = rand();
+      const v = rand();
+      const m = Math.sqrt(-2 * Math.log(u));
+      spare = m * Math.sin(2 * Math.PI * v);
+      return m * Math.cos(2 * Math.PI * v);
+    };
+  }
+
+  // ── Scenario simulation (magnitudes tuned to refs 1–10, 15–19) ──────────
+  const N = 84;
+  const START = Date.UTC(2026, 5, 1);
+  const fmtDay = (d) => new Date(START + d * 864e5).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+  const SCENARIOS = {
+    block: {
+      seed: 7, ctl0: 55, compensation: 0.3, focus: 34,
+      blurb: 'Three ordinary weeks, then five weeks of much harder training, a deload week and a return to steady work. This is the “scale goes up first” pattern.',
+      target: (d) => (d < 21 ? 55 : d < 56 ? 105 : d < 63 ? 40 : 75),
+    },
+    detrain: {
+      seed: 11, ctl0: 95, compensation: 0.7, focus: 70,
+      blurb: 'Four weeks of consistent hard training, then eight weeks of almost none. Weight barely moves while fitness quietly drains. This is the “one day I can barely run a mile” pattern.',
+      target: (d) => (d < 28 ? 95 : 10),
+    },
+    illness: {
+      seed: 23, ctl0: 65, compensation: 0.5, focus: 50, sick: true,
+      blurb: 'Steady training, then a viral illness in week 7. Resting HR and HRV move a day or two before training has to stop.',
+      target: (d) => (d >= 45 && d <= 52 ? 0 : d > 52 && d < 59 ? 30 + (d - 53) * 6 : 65),
+    },
+  };
+
+  const PHASES = {
+    building:    { label: 'Building',          glyph: '↗', color: '--good' },
+    absorbing:   { label: 'Absorbing load',    glyph: '≈', color: '--neutral' },
+    strained:    { label: 'Strained',          glyph: '!', color: '--warn' },
+    freshening:  { label: 'Freshening',        glyph: '↑', color: '--info' },
+    maintaining: { label: 'Maintaining',       glyph: '–', color: '--quiet' },
+    detraining:  { label: 'Detraining',        glyph: '↘', color: '--serious' },
+    illness:     { label: 'Possible illness',  glyph: '✚', color: '--critical' },
+  };
+
+  function simulate(key) {
+    const sc = SCENARIOS[key];
+    const rand = mulberry32(sc.seed);
+    const g = gaussian(rand);
+    const pattern = [1.0, 1.1, 0.8, 1.2, 0.9, 1.7, 0];
+    const norm = 7 / pattern.reduce((a, b) => a + b, 0);
+    let ctl = sc.ctl0, atl = sc.ctl0, tolerance = sc.ctl0, fat = 0, water = 0;
+    const days = [];
+    for (let d = 0; d < N; d++) {
+      const sick = sc.sick ? Math.max(0, 1 - Math.abs(d - 47) / 5) : 0;
+      const target = sc.target(d);
+      let load = target === 0 ? 0 : target * pattern[d % 7] * norm * (1 + 0.12 * g());
+      load = Math.max(0, load);
+      ctl += (load - ctl) / 42;
+      atl += (load - atl) / 7;
+      // Muscle tolerance to a new load adapts over ~2 weeks (repeated-bout effect).
+      tolerance += (load - tolerance) / 14;
+      const form = ctl - atl;
+      const fit = ctl - sc.ctl0;
+      const formT = Math.tanh(form / 25);
+      const hrv = 55 * Math.exp(0.003 * fit + 0.2 * formT - 0.45 * sick + 0.12 * g());
+      const rhr = 54 - 0.06 * fit - 1.5 * formT + 8 * sick + 1.4 * g();
+      const walk = 98 - 0.16 * fit + 6 * sick + 2.2 * g();
+      const compensation = sc.sick && d >= 44 && d <= 52 ? 1 : sc.compensation;
+      const kcal = (load - sc.ctl0) * 7 * (1 - compensation);
+      fat += -kcal / 7700;
+      // Plasma volume + glycogen scale with fitness; swelling tracks unaccustomed load.
+      const waterTarget = 0.014 * fit + 0.06 * Math.max(0, atl - tolerance) - 0.7 * sick;
+      water += (waterTarget - water) / 4;
+      const weighed = rand() > 0.12;
+      const weight = 82 + fat + water + 0.45 * g();
+      days.push({ d, load, ctl, atl, form, hrv, rhr, walk, fat, water, weight: weighed ? weight : null });
+    }
+
+    const window7 = (i, f) => {
+      let s = 0, n = 0;
+      for (let j = Math.max(0, i - 6); j <= i; j++) { s += f(days[j]); n++; }
+      return s / n;
+    };
+    const base = days.slice(0, 21);
+    const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1)); };
+    const lnHrv = base.map((x) => Math.log(x.hrv));
+    const hrvM = mean(lnHrv), hrvS = sd(lnHrv);
+    const rhrM = mean(base.map((x) => x.rhr)), rhrS = sd(base.map((x) => x.rhr));
+    const walkM = mean(base.map((x) => x.walk));
+
+    // Real-time Kalman local-level filter on weight.
+    const q = 0.06 ** 2, r = 0.45 ** 2;
+    let level = null, P = 1;
+    days.forEach((x, i) => {
+      x.hrv7 = Math.exp(window7(i, (y) => Math.log(y.hrv)));
+      x.hrvZ = (Math.log(x.hrv7) - hrvM) / hrvS;
+      x.rhr7 = window7(i, (y) => y.rhr);
+      x.rhrZ = (x.rhr7 - rhrM) / rhrS;
+      x.hrvZ1 = (Math.log(x.hrv) - hrvM) / hrvS;
+      x.rhrZ1 = (x.rhr - rhrM) / rhrS;
+      x.walk7 = window7(i, (y) => y.walk);
+      x.walkDelta = x.walk7 - walkM;
+      if (level === null) {
+        level = x.weight ?? 82;
+      } else {
+        P += q;
+      }
+      if (x.weight !== null) {
+        const K = P / (P + r);
+        level += K * (x.weight - level);
+        P *= 1 - K;
+      }
+      x.trend = level;
+      x.trendSe = Math.sqrt(P);
+      x.dScale = level - 82;
+    });
+
+    // Adaptation state rules (starting thresholds; see "Adaptation State").
+    const raw = days.map((x, i) => {
+      const prev = days[Math.max(0, i - 1)];
+      const ctl21 = days[Math.max(0, i - 21)].ctl;
+      const ctl14 = days[Math.max(0, i - 14)].ctl;
+      const ill = (y) => y.rhrZ1 >= 2 && y.hrvZ1 <= -1;
+      if (ill(x) && ill(prev)) return 'illness';
+      if (x.ctl - ctl21 < -12 && x.walkDelta > 3) return 'detraining';
+      if (x.form < -15 && x.hrvZ < -0.5) return 'strained';
+      if (x.ctl - ctl14 > 5 && x.hrvZ >= -0.5) return 'building';
+      if (x.form < -10) return 'absorbing';
+      if (x.form > 10) return 'freshening';
+      return 'maintaining';
+    });
+    // 5-day majority filter so the ribbon doesn't flicker on noise; illness is never smoothed away.
+    days.forEach((x, i) => {
+      if (raw[i] === 'illness') { x.phase = 'illness'; return; }
+      const counts = {};
+      for (let j = Math.max(0, i - 2); j <= Math.min(N - 1, i + 2); j++) counts[raw[j]] = (counts[raw[j]] || 0) + 1;
+      let best = raw[i];
+      for (const k in counts) if (counts[k] > (counts[best] || 0)) best = k;
+      x.phase = best;
+    });
+    return days;
+  }
+
+  // ── Scales & helpers ───────────────────────────────────────────────────────
+  function niceTicks(min, max, count) {
+    const span = max - min || 1;
+    const step0 = span / Math.max(1, count);
+    const mag = 10 ** Math.floor(Math.log10(step0));
+    const err = step0 / mag;
+    const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+    const ticks = [];
+    for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) ticks.push(+v.toFixed(10));
+    return ticks;
+  }
+  const fmt = (v, digits = 0) => (Math.abs(v) < 1e-9 ? 0 : v).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const signed = (v, digits = 1) => {
+    const rounded = Math.round(v * 10 ** digits) / 10 ** digits;
+    if (rounded === 0) return fmt(0, digits);
+    return (rounded > 0 ? '+' : '−') + fmt(Math.abs(rounded), digits);
+  };
+
+  const state = { scenario: 'block', days: simulate('block'), cursor: null, width: 0 };
+  const lanesEl = $('#lanes');
+  const tip = $('#tl-tip');
+  const crosshairs = [];
+
+  function geometry() {
+    const w = lanesEl.clientWidth;
+    const narrow = w < 560;
+    const ml = narrow ? 34 : 44;
+    const mr = narrow ? 8 : 92;
+    return { w, ml, mr, narrow, pw: Math.max(10, w - ml - mr) };
+  }
+  const xOf = (G, d) => G.ml + (d / (N - 1)) * G.pw;
+
+  function drawAxesY(svg, G, y, ticks, digits, h) {
+    const grid = svgEl('g', { class: 'grid' }, svg);
+    const axis = svgEl('g', { class: 'axis' }, svg);
+    ticks.forEach((t) => {
+      svgEl('line', { x1: G.ml, x2: G.ml + G.pw, y1: y(t), y2: y(t) }, grid);
+      const label = svgEl('text', { x: G.ml - 6, y: y(t) + 3.5, 'text-anchor': 'end' }, axis);
+      label.textContent = fmt(t, digits);
+    });
+    for (let d = 0; d < N; d += 14) {
+      svgEl('line', { x1: xOf(G, d), x2: xOf(G, d), y1: 4, y2: h - 4 }, grid);
+    }
+  }
+
+  function linePath(G, days, f, y) {
+    let d = '';
+    days.forEach((x, i) => {
+      const v = f(x);
+      if (v === null || v === undefined || Number.isNaN(v)) return;
+      d += `${d ? 'L' : 'M'}${xOf(G, i).toFixed(1)},${y(v).toFixed(1)}`;
+    });
+    return d;
+  }
+
+  function endLabels(svg, G, items) {
+    if (G.narrow) return;
+    const ys = items.map((it) => it.y).sort((a, b) => a - b);
+    for (let i = 1; i < ys.length; i++) if (ys[i] - ys[i - 1] < 12) return; // collide → rely on legend
+    items.forEach((it) => {
+      const t = svgEl('text', { x: G.ml + G.pw + 8, y: it.y + 4, class: 'endlabel' }, svg);
+      t.textContent = it.text;
+    });
+  }
+
+  function lane(id, h, draw) {
+    const svg = document.getElementById(id);
+    const G = geometry();
+    clear(svg);
+    svg.setAttribute('width', G.w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${G.w} ${h}`);
+    draw(svg, G, h);
+    const xh = svgEl('line', { class: 'xhair', y1: 0, y2: h, x1: -10, x2: -10, visibility: 'hidden' }, svg);
+    crosshairs.push(xh);
+  }
+
+  function yScale(min, max, h, padTop = 8, padBottom = 8) {
+    return (v) => padTop + (1 - (v - min) / (max - min)) * (h - padTop - padBottom);
+  }
+
+  function render() {
+    const days = state.days;
+    crosshairs.length = 0;
+    const last = days[N - 1];
+
+    // Phase ribbon
+    lane('lane-phase', 24, (svg, G) => {
+      let start = 0;
+      for (let i = 1; i <= N; i++) {
+        if (i < N && days[i].phase === days[start].phase) continue;
+        const p = PHASES[days[start].phase];
+        const x0 = xOf(G, start) - (i === 0 ? 0 : G.pw / (N - 1) / 2);
+        const x1 = xOf(G, i - 1) + G.pw / (N - 1) / 2;
+        svgEl('rect', { x: Math.max(G.ml, x0), y: 2, width: Math.max(1, Math.min(G.ml + G.pw, x1) - Math.max(G.ml, x0) - 1), height: 20, rx: 4, fill: css(p.color) }, svg);
+        const wpx = x1 - x0;
+        if (wpx > p.label.length * 6.6 + 18) {
+          const dark = ['--good', '--critical', '--info', '--serious'].includes(p.color);
+          const t = svgEl('text', { x: (x0 + x1) / 2, y: 16, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: dark ? '#ffffff' : css('--ink') }, svg);
+          t.textContent = `${p.glyph} ${p.label}`;
+        }
+        start = i;
+      }
+    });
+    const legend = $('#ribbon-legend');
+    legend.textContent = '';
+    const present = [...new Set(days.map((x) => x.phase))];
+    Object.keys(PHASES).filter((k) => present.includes(k)).forEach((k) => {
+      const p = PHASES[k];
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      const sw = document.createElement('span');
+      sw.className = 'sw';
+      sw.style.background = `var(${p.color})`;
+      sw.style.color = ['--good', '--critical', '--info', '--serious'].includes(p.color) ? '#fff' : 'var(--ink)';
+      sw.textContent = p.glyph;
+      chip.append(sw, document.createTextNode(p.label));
+      legend.appendChild(chip);
+    });
+
+    // Training load
+    lane('lane-load', 112, (svg, G, h) => {
+      const max = Math.max(...days.map((x) => x.load)) * 1.05;
+      const y = yScale(0, max, h, 6, 4);
+      drawAxesY(svg, G, y, niceTicks(0, max, 3), 0, h);
+      const bw = Math.max(1, Math.min(24, (G.pw / N) * 0.6));
+      days.forEach((x, i) => {
+        if (x.load <= 0) return;
+        const top = y(x.load);
+        svgEl('rect', { x: xOf(G, i) - bw / 2, y: top, width: bw, height: Math.max(0, y(0) - top), rx: Math.min(2, bw / 2), fill: css('--load') }, svg);
+      });
+      svgEl('line', { class: 'baseline', x1: G.ml, x2: G.ml + G.pw, y1: y(0), y2: y(0) }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.ctl, y), fill: 'none', stroke: css('--s1'), 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.atl, y), fill: 'none', stroke: css('--s2'), 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+      endLabels(svg, G, [
+        { y: y(last.ctl), text: `Fitness ${fmt(last.ctl)}` },
+        { y: y(last.atl), text: `Fatigue ${fmt(last.atl)}` },
+      ]);
+    });
+
+    // Recovery z-scores
+    lane('lane-recovery', 104, (svg, G, h) => {
+      const vals = days.flatMap((x) => [x.hrvZ, x.rhrZ]);
+      const lo = Math.min(-2.5, ...vals) - 0.2, hi = Math.max(2.5, ...vals) + 0.2;
+      const y = yScale(lo, hi, h);
+      drawAxesY(svg, G, y, niceTicks(lo, hi, 3), 0, h);
+      svgEl('rect', { x: G.ml, width: G.pw, y: y(1), height: y(-1) - y(1), fill: css('--band') }, svg);
+      svgEl('line', { class: 'baseline', x1: G.ml, x2: G.ml + G.pw, y1: y(0), y2: y(0) }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.hrvZ, y), fill: 'none', stroke: css('--s1'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.rhrZ, y), fill: 'none', stroke: css('--s2'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      endLabels(svg, G, [
+        { y: y(last.hrvZ), text: `HRV ${signed(last.hrvZ)} SD` },
+        { y: y(last.rhrZ), text: `RHR ${signed(last.rhrZ)} SD` },
+      ]);
+    });
+
+    // Walking HR
+    lane('lane-walk', 84, (svg, G, h) => {
+      const vals = days.map((x) => x.walk7);
+      const lo = Math.min(...vals) - 1.5, hi = Math.max(...vals) + 1.5;
+      const y = yScale(lo, hi, h);
+      drawAxesY(svg, G, y, niceTicks(lo, hi, 3), 0, h);
+      const baseV = days[20].walk7;
+      svgEl('line', { class: 'baseline', x1: G.ml, x2: G.ml + G.pw, y1: y(baseV), y2: y(baseV) }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.walk7, y), fill: 'none', stroke: css('--s1'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      endLabels(svg, G, [{ y: y(last.walk7), text: `${fmt(last.walk7)} bpm` }]);
+    });
+
+    // Weight
+    lane('lane-weight', 100, (svg, G, h) => {
+      const vals = days.flatMap((x) => [x.weight ?? x.trend, x.trend + 2 * x.trendSe, x.trend - 2 * x.trendSe]);
+      const lo = Math.min(...vals) - 0.2, hi = Math.max(...vals) + 0.2;
+      const y = yScale(lo, hi, h);
+      drawAxesY(svg, G, y, niceTicks(lo, hi, 3), 1, h);
+      let band = '';
+      days.forEach((x, i) => { band += `${band ? 'L' : 'M'}${xOf(G, i).toFixed(1)},${y(x.trend + 1.96 * x.trendSe).toFixed(1)}`; });
+      for (let i = N - 1; i >= 0; i--) band += `L${xOf(G, i).toFixed(1)},${y(days[i].trend - 1.96 * days[i].trendSe).toFixed(1)}`;
+      svgEl('path', { d: band + 'Z', fill: css('--ci'), stroke: 'none' }, svg);
+      days.forEach((x, i) => {
+        if (x.weight === null) return;
+        svgEl('circle', { cx: xOf(G, i), cy: y(x.weight), r: 2.5, fill: css('--neutral'), 'fill-opacity': 0.75 }, svg);
+      });
+      svgEl('path', { d: linePath(G, days, (x) => x.trend, y), fill: 'none', stroke: css('--ink'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      endLabels(svg, G, [{ y: y(last.trend), text: `${fmt(last.trend, 1)} kg` }]);
+    });
+
+    // Decomposition
+    lane('lane-comp', 132, (svg, G, h) => {
+      const vals = days.flatMap((x) => [x.fat, x.water, x.dScale]);
+      const lo = Math.min(-0.5, ...vals) - 0.15, hi = Math.max(0.5, ...vals) + 0.15;
+      const y = yScale(lo, hi, h, 8, 22);
+      drawAxesY(svg, G, y, niceTicks(lo, hi, 4), 1, h - 14);
+      svgEl('line', { class: 'baseline', x1: G.ml, x2: G.ml + G.pw, y1: y(0), y2: y(0) }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.water, y), fill: 'none', stroke: css('--s1'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.fat, y), fill: 'none', stroke: css('--s2'), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+      svgEl('path', { d: linePath(G, days, (x) => x.dScale, y), fill: 'none', stroke: css('--ink'), 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, svg);
+      endLabels(svg, G, [
+        { y: y(last.water), text: `Water ${signed(last.water)}` },
+        { y: y(last.fat), text: `Fat ${signed(last.fat)}` },
+        { y: y(last.dScale), text: `Scale ${signed(last.dScale)}` },
+      ]);
+      const axis = svgEl('g', { class: 'axis' }, svg);
+      for (let d = 0; d < N; d += 14) {
+        const t = svgEl('text', { x: xOf(G, d), y: h - 2, 'text-anchor': d === 0 ? 'start' : 'middle' }, axis);
+        t.textContent = fmtDay(d);
+      }
+    });
+
+    renderTable();
+    if (state.cursor !== null) showCursor(state.cursor, false);
+    renderCompass();
+  }
+
+  // ── Crosshair + tooltip ────────────────────────────────────────────────────
+  function tipRow(color, label, value) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const k = document.createElement('span');
+    k.className = 'k';
+    if (color) { const i = document.createElement('i'); i.style.background = `var(${color})`; k.appendChild(i); }
+    k.appendChild(document.createTextNode(label));
+    const b = document.createElement('b');
+    b.textContent = value;
+    row.append(k, b);
+    return row;
+  }
+
+  function showCursor(i, moveTip = true) {
+    state.cursor = i;
+    const G = geometry();
+    const x = xOf(G, i);
+    crosshairs.forEach((line) => { line.setAttribute('x1', x); line.setAttribute('x2', x); line.setAttribute('visibility', 'visible'); });
+    const d = state.days[i];
+    const p = PHASES[d.phase];
+    tip.textContent = '';
+    const head = document.createElement('div');
+    head.className = 'tt-date';
+    head.textContent = `${fmtDay(i)} · day ${i + 1}`;
+    const phase = document.createElement('div');
+    phase.className = 'tt-phase';
+    phase.textContent = `${p.glyph} ${p.label}`;
+    tip.append(head, phase,
+      tipRow(null, 'Daily load', fmt(d.load)),
+      tipRow('--s1', 'Fitness', fmt(d.ctl)),
+      tipRow('--s2', 'Fatigue', fmt(d.atl)),
+      tipRow(null, 'Form', signed(d.form, 0)),
+      document.createElement('hr'),
+      tipRow('--s1', 'HRV (7-day)', `${fmt(d.hrv7)} ms · ${signed(d.hrvZ)} SD`),
+      tipRow('--s2', 'Resting HR (7-day)', `${fmt(d.rhr7)} bpm · ${signed(d.rhrZ)} SD`),
+      tipRow(null, 'Walking HR (7-day)', `${fmt(d.walk7)} bpm`),
+      document.createElement('hr'),
+      tipRow(null, 'Scale reading', d.weight === null ? 'not weighed' : `${fmt(d.weight, 1)} kg`),
+      tipRow('--ink', 'Trend', `${fmt(d.trend, 1)} ± ${fmt(1.96 * d.trendSe, 1)} kg`),
+      tipRow('--s1', 'Δ water & glycogen', `${signed(d.water)} kg`),
+      tipRow('--s2', 'Δ fat', `${signed(d.fat)} kg`),
+    );
+    if (moveTip) {
+      tip.hidden = false;
+      const tw = tip.offsetWidth;
+      const left = x + 14 + tw > G.w ? x - 14 - tw : x + 14;
+      tip.style.left = `${Math.max(0, left)}px`;
+      tip.style.top = '28px';
+    }
+  }
+  function hideCursor() {
+    crosshairs.forEach((line) => line.setAttribute('visibility', 'hidden'));
+    tip.hidden = true;
+  }
+  function dayFromEvent(ev) {
+    const rect = lanesEl.getBoundingClientRect();
+    const G = geometry();
+    const x = ev.clientX - rect.left;
+    return Math.max(0, Math.min(N - 1, Math.round(((x - G.ml) / G.pw) * (N - 1))));
+  }
+  lanesEl.addEventListener('pointermove', (ev) => showCursor(dayFromEvent(ev)));
+  lanesEl.addEventListener('pointerleave', () => { if (document.activeElement !== lanesEl) hideCursor(); });
+  lanesEl.addEventListener('click', (ev) => setCompassDay(dayFromEvent(ev)));
+  lanesEl.addEventListener('focus', () => showCursor(state.cursor ?? SCENARIOS[state.scenario].focus));
+  lanesEl.addEventListener('blur', hideCursor);
+  lanesEl.addEventListener('keydown', (ev) => {
+    const cur = state.cursor ?? 0;
+    const next = ev.key === 'ArrowLeft' ? cur - 1 : ev.key === 'ArrowRight' ? cur + 1 : ev.key === 'Home' ? 0 : ev.key === 'End' ? N - 1 : null;
+    if (next === null) { if (ev.key === 'Enter') setCompassDay(cur); return; }
+    ev.preventDefault();
+    showCursor(Math.max(0, Math.min(N - 1, next)));
+  });
+
+  // ── Weekly table view ──────────────────────────────────────────────────────
+  function renderTable() {
+    const table = $('#tl-table');
+    table.textContent = '';
+    const headers = ['Week', 'Avg load', 'Fitness', 'Form', 'HRV z', 'RHR z', 'Walking HR', 'Weight trend', 'Δ water', 'Δ fat', 'State'];
+    const thead = table.createTHead().insertRow();
+    headers.forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (i > 0 && i < 10) th.className = 'num'; thead.appendChild(th); });
+    const body = table.createTBody();
+    for (let w = 0; w < N / 7; w++) {
+      const wk = state.days.slice(w * 7, w * 7 + 7);
+      const end = wk[wk.length - 1];
+      const avgLoad = wk.reduce((a, x) => a + x.load, 0) / wk.length;
+      const counts = {};
+      wk.forEach((x) => { counts[x.phase] = (counts[x.phase] || 0) + 1; });
+      const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+      const cells = [`${w + 1} (${fmtDay(w * 7)})`, fmt(avgLoad), fmt(end.ctl), signed(end.form, 0), signed(end.hrvZ), signed(end.rhrZ), `${fmt(end.walk7)} bpm`, `${fmt(end.trend, 1)} kg`, signed(end.water), signed(end.fat), PHASES[top].label];
+      const row = body.insertRow();
+      cells.forEach((c, i) => { const td = row.insertCell(); td.textContent = c; if (i > 0 && i < 10) td.className = 'num'; });
+    }
+  }
+
+  // ── Recovery compass ───────────────────────────────────────────────────────
+  const compassInput = $('#compass-day');
+  function setCompassDay(i) {
+    compassInput.value = String(Math.max(27, i));
+    renderCompass();
+  }
+  compassInput.addEventListener('input', renderCompass);
+
+  function renderCompass() {
+    const host = $('#compass-chart');
+    clear(host);
+    const end = Number(compassInput.value);
+    $('#compass-day-label').textContent = `${fmtDay(end)} (day ${end + 1})`;
+    const size = Math.min(440, host.clientWidth || 440);
+    const m = 34, span = 3.2;
+    const svg = svgEl('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': 'HRV versus resting heart rate, last 28 days' }, host);
+    const px = (v) => m + ((v + span) / (2 * span)) * (size - 2 * m);
+    const py = (v) => size - m - ((v + span) / (2 * span)) * (size - 2 * m);
+    const grid = svgEl('g', { class: 'grid' }, svg);
+    [-3, -2, -1, 1, 2, 3].forEach((t) => {
+      svgEl('line', { x1: px(t), x2: px(t), y1: py(span), y2: py(-span) }, grid);
+      svgEl('line', { y1: py(t), y2: py(t), x1: px(-span), x2: px(span) }, grid);
+    });
+    svgEl('rect', { x: px(-1), y: py(1), width: px(1) - px(-1), height: py(-1) - py(1), fill: css('--band') }, svg);
+    svgEl('line', { class: 'baseline', x1: px(0), x2: px(0), y1: py(span), y2: py(-span) }, svg);
+    svgEl('line', { class: 'baseline', y1: py(0), y2: py(0), x1: px(-span), x2: px(span) }, svg);
+    const axis = svgEl('g', { class: 'axis' }, svg);
+    [-2, 0, 2].forEach((t) => {
+      const a = svgEl('text', { x: px(t), y: size - m + 16, 'text-anchor': 'middle' }, axis); a.textContent = signed(t, 0);
+      const b = svgEl('text', { x: m - 8, y: py(t) + 4, 'text-anchor': 'end' }, axis); b.textContent = signed(t, 0);
+    });
+    const xl = svgEl('text', { x: size - m, y: size - 6, 'text-anchor': 'end' }, axis); xl.textContent = 'Resting HR vs baseline (SD) →';
+    const yl = svgEl('text', { x: 10, y: m - 14, 'text-anchor': 'start' }, axis); yl.textContent = '↑ HRV vs baseline (SD)';
+    const quads = [
+      { x: px(-span) + 8, y: py(span) + 16, a: 'start', t: 'Recovered' },
+      { x: px(span) - 8, y: py(span) + 16, a: 'end', t: 'Mixed' },
+      { x: px(-span) + 8, y: py(-span) - 8, a: 'start', t: 'Deep fatigue' },
+      { x: px(span) - 8, y: py(-span) - 8, a: 'end', t: 'Strained / unwell' },
+    ];
+    quads.forEach((qd) => { const t = svgEl('text', { x: qd.x, y: qd.y, 'text-anchor': qd.a, 'font-size': 12, 'font-weight': 600, fill: css('--muted') }, svg); t.textContent = qd.t; });
+
+    const clamp = (v) => Math.max(-span + 0.1, Math.min(span - 0.1, v));
+    const win = state.days.slice(end - 27, end + 1);
+    let trail = '';
+    win.forEach((x, i) => { trail += `${i ? 'L' : 'M'}${px(clamp(x.rhrZ)).toFixed(1)},${py(clamp(x.hrvZ)).toFixed(1)}`; });
+    svgEl('path', { d: trail, fill: 'none', stroke: css('--neutral'), 'stroke-width': 1.25, 'stroke-linejoin': 'round' }, svg);
+    win.forEach((x, i) => {
+      const isLast = i === win.length - 1;
+      const c = svgEl('circle', {
+        cx: px(clamp(x.rhrZ)), cy: py(clamp(x.hrvZ)), r: isLast ? 6.5 : 4,
+        fill: css('--s1'), 'fill-opacity': isLast ? 1 : 0.2 + 0.65 * (i / win.length),
+        stroke: css('--surface'), 'stroke-width': 2,
+      }, svg);
+      const title = svgEl('title', {}, c);
+      title.textContent = `${fmtDay(x.d)}: HRV ${signed(x.hrvZ)} SD, resting HR ${signed(x.rhrZ)} SD`;
+    });
+    const lastD = win[win.length - 1];
+    const lx = px(clamp(lastD.rhrZ)), ly = py(clamp(lastD.hrvZ));
+    const lab = svgEl('text', { x: lx + (lx > size / 2 ? -10 : 10), y: ly - 10, 'text-anchor': lx > size / 2 ? 'end' : 'start', 'font-size': 12, 'font-weight': 600, fill: css('--ink') }, svg);
+    lab.textContent = fmtDay(lastD.d);
+  }
+
+  // ── Fig. 2: three clocks ───────────────────────────────────────────────────
+  const CLOCKS = [
+    { g: 's1', label: 'HRV after a hard session', lo: 1, hi: 3, src: '18' },
+    { g: 's1', label: 'Resting HR, HRV in early illness', lo: 1, hi: 5, src: '31, 34' },
+    { g: 's1', label: 'Resp. rate & wrist temp in illness', lo: 1, hi: 4, src: '33, 34' },
+    { g: 's1', label: 'Glycogen & water on the scale', lo: 1, hi: 7, src: '7' },
+    { g: 's2', label: 'Plasma volume with new training', lo: 3, hi: 28, src: '5, 6' },
+    { g: 's2', label: 'Muscle swelling from new lifting', lo: 2, hi: 21, src: '8, 9' },
+    { g: 's2', label: 'Walking / submax HR', lo: 10, hi: 28, src: '1, 17' },
+    { g: 's2', label: 'VO₂max loss when training stops', lo: 12, hi: 56, src: '2' },
+    { g: 's3', label: 'Aerobic fitness gains (VO₂max)', lo: 28, hi: 84, src: '20, 21' },
+    { g: 's3', label: 'Real muscle growth', lo: 21, hi: 84, src: '8' },
+    { g: 's3', label: 'Fat mass from energy balance', lo: 28, hi: 365, src: '10' },
+  ];
+  function renderClocks() {
+    const host = $('#clocks-chart');
+    clear(host);
+    const w = host.clientWidth || 800;
+    const narrow = w < 620;
+    const labelW = narrow ? 0 : 250;
+    const rowH = narrow ? 42 : 26;
+    const top = 6, axisH = 26;
+    const h = top + CLOCKS.length * rowH + axisH;
+    const x0 = labelW + 8, x1 = w - 12;
+    const lx = (v) => x0 + (Math.log(v) / Math.log(365)) * (x1 - x0);
+    const svg = svgEl('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}`, role: 'img', 'aria-label': 'Time for each signal to show a detectable change' }, host);
+    const grid = svgEl('g', { class: 'grid' }, svg);
+    const axis = svgEl('g', { class: 'axis' }, svg);
+    [[1, '1 day'], [3, '3 d'], [7, '1 wk'], [14, '2 wk'], [30, '1 mo'], [90, '3 mo'], [365, '1 yr']].forEach(([v, t]) => {
+      svgEl('line', { x1: lx(v), x2: lx(v), y1: top, y2: h - axisH + 2 }, grid);
+      const tx = svgEl('text', { x: lx(v), y: h - 8, 'text-anchor': v === 1 ? 'start' : v === 365 ? 'end' : 'middle' }, axis);
+      tx.textContent = t;
+    });
+    CLOCKS.forEach((c, i) => {
+      const yTop = top + i * rowH;
+      const barY = narrow ? yTop + 22 : yTop + 8;
+      const lab = svgEl('text', { x: narrow ? x0 : labelW, y: narrow ? yTop + 14 : yTop + 17, 'text-anchor': narrow ? 'start' : 'end', 'font-size': 12.5, fill: css('--ink-2') }, svg);
+      lab.textContent = c.label;
+      const bar = svgEl('rect', { x: lx(c.lo), y: barY, width: Math.max(8, lx(c.hi) - lx(c.lo)), height: 12, rx: 4, fill: css(`--${c.g}`) }, svg);
+      const title = svgEl('title', {}, bar);
+      title.textContent = `${c.label}: ~${c.lo}–${c.hi} days (refs ${c.src})`;
+    });
+    // Table view
+    const table = $('#clocks-table');
+    table.textContent = '';
+    const hr = table.createTHead().insertRow();
+    ['Signal', 'Clock', 'Typical range (days)', 'Refs'].forEach((t, i) => { const th = document.createElement('th'); th.textContent = t; if (i === 2) th.className = 'num'; hr.appendChild(th); });
+    const tb = table.createTBody();
+    const names = { s1: 'Fast', s2: 'Medium', s3: 'Slow' };
+    CLOCKS.forEach((c) => {
+      const r = tb.insertRow();
+      [c.label, names[c.g], `${c.lo}–${c.hi}`, c.src].forEach((v, i) => { const td = r.insertCell(); td.textContent = v; if (i === 2) td.className = 'num'; });
+    });
+  }
+
+  // ── Fig. 4: sleep barcode ──────────────────────────────────────────────────
+  function sleepNights(seed, jitter, weekendShift, shortNightProb) {
+    const rand = mulberry32(seed);
+    const g = gaussian(rand);
+    const nights = [];
+    for (let n = 0; n < 28; n++) {
+      const weekend = n % 7 === 4 || n % 7 === 5;
+      const bed = 23 + (weekend ? weekendShift : 0) + jitter * g() / 60; // hours after midnight of day 0 evening
+      let dur = 7.4 + 0.35 * g() + (rand() < shortNightProb ? -1.8 : 0) + (weekend ? weekendShift * 0.4 : 0);
+      dur = Math.max(4.5, Math.min(9.8, dur));
+      nights.push({ bed, wake: bed + dur, dur });
+    }
+    return nights;
+  }
+  function sri(nights) {
+    // Minute states over 28 days starting 18:00 on night 0; asleep = 1.
+    const minutes = 28 * 1440;
+    const s = new Uint8Array(minutes + 1440);
+    nights.forEach((nt, n) => {
+      const start = Math.round((n * 24 + (nt.bed - 18)) * 60);
+      const end = Math.round((n * 24 + (nt.wake - 18)) * 60);
+      for (let t = Math.max(0, start); t < Math.min(s.length, end); t++) s[t] = 1;
+    });
+    let same = 0, total = 0;
+    for (let t = 0; t < minutes - 1440; t++) { total++; if (s[t] === s[t + 1440]) same++; }
+    return 200 * (same / total) - 100;
+  }
+  function renderActogram(hostId, titleId, name, nights) {
+    const host = document.getElementById(hostId);
+    clear(host);
+    const w = host.clientWidth || 440;
+    const rowH = 9, top = 4, axisH = 20, ml = 6, mr = 6;
+    const h = top + nights.length * rowH + axisH;
+    const x = (hour) => ml + ((hour - 18) / 20) * (w - ml - mr);
+    const svg = svgEl('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}`, role: 'img', 'aria-label': `${name}: 28 nights of sleep windows` }, host);
+    const grid = svgEl('g', { class: 'grid' }, svg);
+    const axis = svgEl('g', { class: 'axis' }, svg);
+    [[18, '6 pm'], [22, '10 pm'], [26, '2 am'], [30, '6 am'], [34, '10 am'], [38, '2 pm']].forEach(([hr, t]) => {
+      svgEl('line', { x1: x(hr), x2: x(hr), y1: top, y2: h - axisH + 2 }, grid);
+      const tx = svgEl('text', { x: x(hr), y: h - 6, 'text-anchor': hr === 18 ? 'start' : hr === 38 ? 'end' : 'middle' }, axis);
+      tx.textContent = t;
+    });
+    nights.forEach((nt, i) => {
+      const r = svgEl('rect', { x: x(nt.bed), y: top + i * rowH + 1, width: Math.max(2, x(nt.wake) - x(nt.bed)), height: rowH - 2.5, rx: 2, fill: css('--s1') }, svg);
+      const title = svgEl('title', {}, r);
+      title.textContent = `Night ${i + 1}: ${nt.dur.toFixed(1)} h`;
+    });
+    const avg = nights.reduce((a, n) => a + n.dur, 0) / nights.length;
+    document.getElementById(titleId).textContent = `${name} · avg ${avg.toFixed(1)} h · SRI ${Math.round(sri(nights))}`;
+  }
+  const regular = sleepNights(3, 14, 0.4, 0.02);
+  const irregular = sleepNights(5, 75, 1.8, 0.18);
+  function renderSleep() {
+    renderActogram('act-a', 'act-a-title', 'Regular sleeper', regular);
+    renderActogram('act-b', 'act-b-title', 'Irregular sleeper', irregular);
+  }
+
+  // ── Wiring ─────────────────────────────────────────────────────────────────
+  function setScenario(key) {
+    state.scenario = key;
+    state.days = simulate(key);
+    state.cursor = null;
+    hideCursor();
+    document.querySelectorAll('[data-scenario]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scenario === key)));
+    $('#scenario-blurb').textContent = SCENARIOS[key].blurb;
+    compassInput.value = String(SCENARIOS[key].focus);
+    render();
+  }
+  document.querySelectorAll('[data-scenario]').forEach((b) => b.addEventListener('click', () => setScenario(b.dataset.scenario)));
+
+  let lastWidth = 0;
+  const ro = new ResizeObserver(() => {
+    const w = lanesEl.clientWidth;
+    if (Math.abs(w - lastWidth) < 2) return;
+    lastWidth = w;
+    render();
+    renderClocks();
+    renderSleep();
+  });
+  ro.observe(lanesEl);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const rerenderAll = () => { render(); renderClocks(); renderSleep(); };
+  if (mq.addEventListener) mq.addEventListener('change', rerenderAll);
+  new MutationObserver(rerenderAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  setScenario('block');
+  renderClocks();
+  renderSleep();
+})();
+</script>
