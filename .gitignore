@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Personal health data. This must never be committed: it includes clinical
+# records, ECGs and GPS routes.
+/data/
+*.zip
+export.xml
+export_cda.xml
+
+# The global gitignore ignores lib/ (a Python convention); allow it here.
+!lib/
+
+# Build output
+.expo/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env*.local
+*.pem
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.jks
+
+# OS / editor
+.DS_Store
+.cursor/

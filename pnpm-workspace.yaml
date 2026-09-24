@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Several React Native native libraries (Nitro modules in particular) still
+# assume a hoisted node_modules layout, so we trade pnpm's isolation for
+# predictable autolinking.
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - esbuild
