@@ -16,6 +16,9 @@ export type SessionKind =
   'rest' | 'recovery' | 'easy_aerobic' | 'moderate_aerobic' | 'hard_aerobic' | 'strength';
 
 export interface Reason {
+  /** One line for the plan card. */
+  readonly summary: string;
+  /** The full reasoning, shown when the user asks why. */
   readonly text: string;
   readonly evidence: readonly CitationId[];
 }
@@ -24,6 +27,7 @@ export interface TodayPlan {
   readonly date: LocalDate;
   readonly primary: SessionKind;
   readonly alternatives: readonly SessionKind[];
+  /** Never empty; the first reason explains `primary`. */
   readonly reasons: readonly Reason[];
   readonly confidence: Confidence;
 }
@@ -79,6 +83,7 @@ export function planToday(inputs: TodayInputs): TodayPlan {
       alternatives: ['recovery'],
       reasons: [
         {
+          summary: 'Overnight signals look like your body is fighting something.',
           text: 'Overnight signals look the way they do when your body is fighting something. Rest, and watch for symptoms.',
           evidence: illness.evidence,
         },
@@ -89,6 +94,10 @@ export function planToday(inputs: TodayInputs): TodayPlan {
 
   if (readiness.status === 'hold_back' || state.state === 'strained') {
     reasons.push({
+      summary:
+        state.state === 'strained'
+          ? 'Recent load is well above normal and HRV is down.'
+          : 'HRV is below your normal range.',
       text:
         state.state === 'strained'
           ? 'Recent load is well above what you are used to and HRV is down. Keep today easy.'
@@ -118,6 +127,10 @@ export function planToday(inputs: TodayInputs): TodayPlan {
   if (strengthDue) {
     candidates.push('strength');
     reasons.push({
+      summary:
+        week.strengthDays === 0
+          ? 'No strength training in the last 7 days.'
+          : `${week.strengthDays} of ${WHO_STRENGTH_DAYS} strength days in the last 7.`,
       text: `You've done strength training on ${week.strengthDays} of the last 7 days. The guideline is 2 or more days a week, with 48 hours between sessions for the same muscles.`,
       evidence: ['bull2020', 'garber2011'],
     });
@@ -125,6 +138,7 @@ export function planToday(inputs: TodayInputs): TodayPlan {
   if (hardDue) {
     candidates.push('hard_aerobic');
     reasons.push({
+      summary: 'You’re recovered and your last hard session was 2+ days ago.',
       text: 'HRV is inside your normal range and your last hard session was at least 2 days ago, so a hard session fits today.',
       evidence: ['vesterinen2016', 'stanley2013'],
     });
@@ -132,6 +146,7 @@ export function planToday(inputs: TodayInputs): TodayPlan {
   if (week.equivalentMinutes < WHO_AEROBIC_MINIMUM) {
     candidates.push('moderate_aerobic');
     reasons.push({
+      summary: `${Math.round(week.equivalentMinutes)} of ${WHO_AEROBIC_MINIMUM} cardio minutes in the last 7 days.`,
       text: `You have ${Math.round(week.equivalentMinutes)} of the 150 weekly aerobic minutes (a vigorous minute counts double).`,
       evidence: ['bull2020', 'garber2011'],
     });
@@ -139,9 +154,25 @@ export function planToday(inputs: TodayInputs): TodayPlan {
   if (state.state === 'absorbing') {
     candidates.push('easy_aerobic', 'recovery');
     reasons.push({
+      summary: 'You’re carrying fatigue from recent training.',
       text: 'You are carrying fatigue from recent training. Easy volume keeps you moving while it clears.',
       evidence: state.evidence,
     });
+  }
+  if (reasons.length === 0) {
+    reasons.push(
+      week.strengthDays < WHO_STRENGTH_DAYS
+        ? {
+            summary: 'Cardio minutes are met; strength is due again after 48 hours.',
+            text: `You have ${Math.round(week.equivalentMinutes)} of the 150 weekly aerobic minutes. Your last strength session was less than 48 hours ago, and the same muscles need 48 hours between sessions, so the next one fits after that.`,
+            evidence: ['bull2020', 'garber2011'],
+          }
+        : {
+            summary: 'You’re on track for the week.',
+            text: 'You have met the weekly aerobic and strength guidelines, and nothing in your recovery asks for a change. Easy movement or a rest day both fit.',
+            evidence: ['bull2020'],
+          },
+    );
   }
   candidates.push('easy_aerobic', 'rest');
 

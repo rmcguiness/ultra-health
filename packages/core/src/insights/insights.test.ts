@@ -233,6 +233,7 @@ describe('planToday', () => {
     });
     expect(p.primary).toBe('strength');
     expect(p.alternatives).toContain('hard_aerobic');
+    expect(p.reasons[0]?.summary).toBe('No strength training in the last 7 days.');
   });
 
   it('spaces strength sessions 48 h apart', () => {
@@ -249,6 +250,7 @@ describe('planToday', () => {
       sessions: withLift,
     });
     expect(p.primary).toBe('hard_aerobic');
+    expect(p.reasons[0]?.summary).toMatch(/last hard session/);
   });
 
   it('warns about a fast two-week ramp', () => {

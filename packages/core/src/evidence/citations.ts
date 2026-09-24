@@ -386,6 +386,14 @@ export const CITATIONS = {
     doi: '10.1007/s40279-024-02034-z',
     pmid: '38717713',
   },
+  helgerud2007: {
+    authors: 'Helgerud J, Høydal K, Wang E, et al.',
+    year: 2007,
+    title: 'Aerobic high-intensity intervals improve VO2max more than moderate training',
+    journal: 'Med Sci Sports Exerc 39:665–71',
+    doi: '10.1249/mss.0b013e3180304570',
+    pmid: '17414804',
+  },
   garthe2011: {
     authors: 'Garthe I, Raastad T, Refsnes PE, Koivisto A, Sundgot-Borgen J',
     year: 2011,

@@ -11,20 +11,26 @@ import {
   fitnessFatigue,
   fitWeightParams,
   forecastWeight,
+  isMuscleStrengthening,
   maintenanceCheck,
   mean,
+  median,
   planToday,
   projectMarker,
   readiness,
   scorecard,
+  sessionTarget,
   sleepRegularityIndex,
   trainingBlocks,
+  typicalSessionMinutes,
   valueOn,
   valuesBetween,
   weeklyInsights,
+  weeklySteps,
   weightComposition,
   weightTrend,
   whatWorked,
+  workoutFamily,
   type ActivityWeek,
   type AdaptationState,
   type AerobicTrend,
@@ -32,15 +38,20 @@ import {
   type DenseSeries,
   type DetrainingOutlook,
   type FitnessFatiguePoint,
+  type HeartRateAnchors,
   type IllnessWatch,
   type LocalDate,
   type MaintenanceCheck,
   type MarkerProjection,
   type Readiness,
   type Scorecard,
+  type SessionKind,
+  type SessionTarget,
   type SleepRegularity,
   type TodayPlan,
+  type TrainingSession,
   type WeeklyInsight,
+  type WeeklyStep,
   type WeightForecast,
   type WeightTrend,
   type WhatWorked,
@@ -84,6 +95,9 @@ export interface DailyAnalysis {
   /** 7-day means vs baseline, robust SD units (the recovery compass axes). */
   readonly hrvZ7: number | undefined;
   readonly rhrZ7: number | undefined;
+  /** That day's own reading vs the same baseline (SD), for drawing history. */
+  readonly hrvZ1: number | undefined;
+  readonly rhrZ1: number | undefined;
 }
 
 /** Fitness–fatigue over the whole input range, rest days included. */
@@ -121,8 +135,10 @@ export function analyzeDay(
   // Morning view: yesterday's training is the latest that has happened.
   const yesterday = addDays(date, -1);
   const upToYesterday = load.filter((p) => p.date <= yesterday);
-  const hrvZ7 = hrv.series ? deviationOn(hrv.series, date, { log: true })?.zRecent : undefined;
-  const rhrZ7 = series.restingHr ? deviationOn(series.restingHr, date)?.zRecent : undefined;
+  const hrvDev = hrv.series ? deviationOn(hrv.series, date, { log: true }) : undefined;
+  const rhrDev = series.restingHr ? deviationOn(series.restingHr, date) : undefined;
+  const hrvZ7 = hrvDev?.zRecent;
+  const rhrZ7 = rhrDev?.zRecent;
   const state = adaptationState({
     date: yesterday,
     load: upToYesterday,
@@ -143,6 +159,8 @@ export function analyzeDay(
     plan: planToday({ date, readiness: ready, illness, state, week, sessions: inputs.sessions }),
     hrvZ7,
     rhrZ7,
+    hrvZ1: hrvDev?.zToday,
+    rhrZ1: rhrDev?.zToday,
   };
 }
 
@@ -176,8 +194,21 @@ export function analyzeRange(
   return enumerateDates(from, to).map((d) => analyzeDay(inputs, load, d, watchers));
 }
 
+/** Today's plan made concrete: how long, how hard, and what is left this week. */
+export interface TodayGuide {
+  readonly primary: SessionTarget;
+  readonly alternative: SessionTarget | undefined;
+  /** A session of the recommended kind is already logged today. */
+  readonly doneToday: boolean;
+  /** Weekly targets over the 7 days ending today, so today's workout counts. */
+  readonly steps: readonly WeeklyStep[];
+  readonly anchors: HeartRateAnchors | undefined;
+  readonly maxHrMethod: 'observed' | 'age_predicted' | undefined;
+}
+
 export interface Outlook {
   readonly day: DailyAnalysis;
+  readonly guide: TodayGuide;
   /** Where you stand against each evidence-based target. */
   readonly scorecard: Scorecard;
   readonly aerobic: AerobicTrend;
@@ -207,6 +238,39 @@ function weeksBelowMaintenance(inputs: AnalyticsInputs, date: LocalDate): number
     }
   }
   return undefined;
+}
+
+function matchesKind(kind: SessionKind, s: TrainingSession): boolean {
+  if (kind === 'strength') return isMuscleStrengthening(s.activityType);
+  if (kind === 'rest' || kind === 'recovery') return false;
+  const family = workoutFamily(s.activityType);
+  return family === 'endurance' || family === 'intervals' || family === 'sport';
+}
+
+function todayGuide(inputs: AnalyticsInputs, day: DailyAnalysis, date: LocalDate): TodayGuide {
+  const { series, sessions } = inputs;
+  // Same resting-HR anchor as session loads: the median of the last 30 days.
+  const rest = series.restingHr
+    ? median(valuesBetween(series.restingHr, addDays(date, -29), date))
+    : undefined;
+  const anchors =
+    rest !== undefined && inputs.maxHr ? { restingHr: rest, maxHr: inputs.maxHr.value } : undefined;
+  const target = (kind: SessionKind) => sessionTarget(kind, { sessions, asOf: date, anchors });
+  const alternative = day.plan.alternatives[0];
+  return {
+    primary: target(day.plan.primary),
+    alternative: alternative === undefined ? undefined : target(alternative),
+    doneToday: sessions.some((s) => s.date === date && matchesKind(day.plan.primary, s)),
+    steps: weeklySteps({
+      week: activityWeek(sessions, date, series.exerciseMinutes),
+      sleepHours: series.sleepHours
+        ? valuesBetween(series.sleepHours, addDays(date, -6), date)
+        : [],
+      typicalCardioMinutes: typicalSessionMinutes(sessions, date, ['endurance']),
+    }),
+    anchors,
+    maxHrMethod: inputs.maxHr?.method,
+  };
 }
 
 /** The full picture for `date`: today plus trends, forecasts and patterns. */
@@ -268,6 +332,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
 
   return {
     day,
+    guide: todayGuide(inputs, day, date),
     scorecard: scorecard({
       date,
       sessions: inputs.sessions,

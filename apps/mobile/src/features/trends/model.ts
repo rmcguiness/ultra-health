@@ -1,11 +1,9 @@
 import {
   addDays,
+  centeredMean,
   daysBetween,
   fitnessFatigue,
-  rollingMean,
   sleepDateKey,
-  valueOn,
-  weightTrend,
   type AdaptationStateId,
   type AsleepInterval,
   type LocalDate,
@@ -32,14 +30,18 @@ export interface TimelineModel {
   readonly load: readonly XY[];
   readonly fitness: readonly XY[];
   readonly fatigue: readonly XY[];
+  /**
+   * Each day's reading vs your baseline (SD), as a centred 7-day mean so a
+   * change is drawn on the days it happened. (Readiness itself uses the
+   * trailing 7-day mean, which by construction runs about 3 days late.)
+   */
   readonly hrvZ: readonly XY[];
   readonly rhrZ: readonly XY[];
-  readonly walking: readonly XY[];
-  readonly walkingTrend: readonly XY[];
-  readonly weight: readonly XY[];
-  /** Hindsight Kalman trend with a 90% band. */
-  readonly weightTrend: readonly (XY & { readonly lo: number; readonly hi: number })[];
 }
+
+/** Same 7 days as readiness, and the same 3-reading minimum (Plews 2014). */
+const RECOVERY_WINDOW = 7;
+const RECOVERY_MIN_READINGS = 3;
 
 export function timelineModel(
   inputs: AnalyticsInputs,
@@ -53,54 +55,24 @@ export function timelineModel(
   const inside = (date: LocalDate) => date >= from && date <= to;
 
   const states: (AdaptationStateId | undefined)[] = Array.from({ length: n }, () => undefined);
-  const hrvZ: XY[] = [];
-  const rhrZ: XY[] = [];
+  const hrvDaily: (number | null)[] = Array.from({ length: n }, () => null);
+  const rhrDaily: (number | null)[] = Array.from({ length: n }, () => null);
   for (const a of analyses) {
     if (!inside(a.date)) continue;
     states[x(a.date)] = a.state.state;
-    if (a.hrvZ7 !== undefined) hrvZ.push({ x: x(a.date), y: a.hrvZ7 });
-    if (a.rhrZ7 !== undefined) rhrZ.push({ x: x(a.date), y: a.rhrZ7 });
+    hrvDaily[x(a.date)] = a.hrvZ1 ?? null;
+    rhrDaily[x(a.date)] = a.rhrZ1 ?? null;
   }
+  const centred = (values: (number | null)[]): XY[] =>
+    centeredMean({ from, to, values }, RECOVERY_WINDOW, RECOVERY_MIN_READINGS).values.flatMap(
+      (v, i) => (v === null ? [] : [{ x: i, y: v }]),
+    );
+  const hrvZ = centred(hrvDaily);
+  const rhrZ = centred(rhrDaily);
 
   // Load on the day itself (not the morning view), over the full input range
   // so fitness has its history.
   const load = fitnessFatigue(inputs.dailyLoad, inputs.range).filter((p) => inside(p.date));
-
-  const walkingSeries = inputs.series.walkingHr;
-  const walking: XY[] = [];
-  const walkingTrend: XY[] = [];
-  if (walkingSeries) {
-    // A week of lead-in so the 7-day mean exists from the first day.
-    const lead = addDays(from, -7);
-    const window = {
-      from: lead,
-      to,
-      values: Array.from({ length: daysBetween(lead, to) + 1 }, (_, i) =>
-        valueOn(walkingSeries, addDays(lead, i)),
-      ),
-    };
-    const trend = rollingMean(window, 7, 3);
-    window.values.forEach((v, i) => {
-      const date = addDays(lead, i);
-      if (!inside(date)) return;
-      if (v !== null) walking.push({ x: x(date), y: v });
-      const t = trend.values[i];
-      if (t !== null && t !== undefined) walkingTrend.push({ x: x(date), y: t });
-    });
-  }
-
-  const weights = inputs.weights.filter((w) => w.date <= to);
-  const weight = weights.filter((w) => inside(w.date)).map((w) => ({ x: x(w.date), y: w.kg }));
-  const first = weights[0]?.date;
-  const trend = first && weight.length > 0 ? weightTrend(weights, { from: first, to }) : undefined;
-  const weightLine = (trend?.smoothed ?? [])
-    .filter((p) => inside(p.date))
-    .map((p) => ({
-      x: x(p.date),
-      y: p.level,
-      lo: p.level - 1.645 * p.levelSd,
-      hi: p.level + 1.645 * p.levelSd,
-    }));
 
   return {
     from,
@@ -113,10 +85,6 @@ export function timelineModel(
     fatigue: load.map((p) => ({ x: x(p.date), y: p.fatigue })),
     hrvZ,
     rhrZ,
-    walking,
-    walkingTrend,
-    weight,
-    weightTrend: weightLine,
   };
 }
 

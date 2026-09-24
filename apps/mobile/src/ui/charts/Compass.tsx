@@ -15,8 +15,10 @@ export interface CompassPoint {
 const LIMIT = 3;
 
 /**
- * HRV against resting HR, both as distance from your baseline, as a trail
- * over the last 28 days. Up-left is recovered (HRV up, resting HR down),
+ * HRV against resting HR, both as distance from your baseline, one dot per
+ * day over the last 28 days. Neither axis is time, so the days are not
+ * joined by a line (a trail would double back on itself and read like a
+ * time series); age is shown by fading instead. Up-left is recovered (HRV up, resting HR down),
  * down-right is strained or unwell. Down-left (both low) can be deep fatigue
  * or, in well-trained people, HRV saturation, so it needs context rather
  * than an alarm (Plews 2013). Values are clamped to ±3 SD.
@@ -39,8 +41,6 @@ export function Compass({ points }: { points: readonly CompassPoint[] }) {
     axes.lineTo(s(0), size);
     axes.moveTo(0, size - s(0));
     axes.lineTo(size, size - s(0));
-    const trail = Skia.Path.Make();
-    points.forEach((p, i) => (i === 0 ? trail.moveTo(x(p), y(p)) : trail.lineTo(x(p), y(p))));
     // Older days fade: four age groups, each its own path and opacity.
     const groups = [0, 1, 2, 3].map(() => Skia.Path.Make());
     points.forEach((p, i) => {
@@ -48,7 +48,7 @@ export function Compass({ points }: { points: readonly CompassPoint[] }) {
       groups[Math.min(3, Math.floor(age / 7))]!.addCircle(x(p), y(p), age === 0 ? 5 : 3);
     });
     const last = points[points.length - 1];
-    return { grid, axes, trail, groups, last: last ? { x: x(last), y: y(last) } : undefined };
+    return { grid, axes, groups, last: last ? { x: x(last), y: y(last) } : undefined };
   }, [points, size]);
 
   return (
@@ -75,13 +75,6 @@ export function Compass({ points }: { points: readonly CompassPoint[] }) {
             <Path path={draw.axes} color={colors.textTertiary} style="stroke" strokeWidth={1}>
               <DashPathEffect intervals={[4, 4]} />
             </Path>
-            <Path
-              path={draw.trail}
-              color={colors.textSecondary}
-              opacity={0.35}
-              style="stroke"
-              strokeWidth={1}
-            />
             {draw.groups.map((g, i) => (
               <Path key={i} path={g} color={series.one} opacity={[1, 0.6, 0.35, 0.2][i]} />
             ))}
@@ -115,7 +108,7 @@ export function Compass({ points }: { points: readonly CompassPoint[] }) {
         </Text>
       </View>
       <Text variant="footnote" tone="tertiary">
-        Up: higher HRV. Units: SD from your baseline. Latest day ringed; older days fade.
+        Up: higher HRV. Latest day ringed; older days fade.
       </Text>
     </View>
   );

@@ -25,5 +25,6 @@ export * from './fitness/aerobicTrend';
 export * from './insights/adaptationState';
 export * from './insights/whatWorked';
 export * from './recommend/plan';
+export * from './recommend/targets';
 export * from './insights/scorecard';
 export * from './training/planner';

@@ -3,17 +3,16 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
 import { useOutlook } from '@/features/analytics';
 import { today } from '@/features/queries';
 import {
-  DetrainingCard,
-  FitnessCard,
-  PlanCard,
-  ReadinessCard,
+  Alerts,
+  comingLater,
+  ForecastCard,
+  PlanHero,
   ScorecardCard,
   WeekCard,
-  WeightCard,
   WhatWorkedCard,
 } from '@/features/today/cards';
-import { formatDay } from '@/ui/charts/model';
 import { useSyncStore } from '@/sync/store';
+import { formatDay } from '@/ui/charts/model';
 import { Card } from '@/ui/components/Card';
 import { Screen } from '@/ui/components/Screen';
 import { SyncStatus } from '@/ui/components/SyncStatus';
@@ -21,13 +20,15 @@ import { Text } from '@/ui/components/Text';
 import { colors, spacing } from '@/ui/theme';
 
 /**
- * The morning view: what to do today and why, then where you stand. Every
- * statement carries its sources; anything still learning your baseline says so.
+ * The morning view, top to bottom: anything that needs attention, what to do
+ * today and why, what is left this week, where you stand and where you are
+ * heading. Each card's ⓘ holds the reasoning and the papers.
  */
 export default function Today() {
   const { status, sync } = useSyncStore();
   const { data: outlook, error, isPending } = useOutlook();
   const date = today();
+  const later = outlook ? comingLater(outlook) : [];
 
   return (
     <Screen
@@ -44,18 +45,23 @@ export default function Today() {
       <SyncStatus />
       {outlook ? (
         <>
-          <PlanCard outlook={outlook} />
-          <ReadinessCard outlook={outlook} />
-          <DetrainingCard outlook={outlook} />
+          <Alerts outlook={outlook} />
+          <PlanHero outlook={outlook} />
           <WeekCard outlook={outlook} />
           <ScorecardCard outlook={outlook} />
-          <FitnessCard outlook={outlook} />
-          <WeightCard outlook={outlook} />
+          <ForecastCard outlook={outlook} />
           <WhatWorkedCard outlook={outlook} />
-          <Text variant="footnote" tone="tertiary" style={styles.disclaimer}>
-            For training decisions, not medical diagnosis. Sudden or lasting changes in resting
-            heart rate, breathing or oxygen, or any symptoms, belong with a clinician.
-          </Text>
+          <View style={styles.footer}>
+            {later.map((line) => (
+              <Text key={line} variant="caption" tone="tertiary">
+                {line}
+              </Text>
+            ))}
+            <Text variant="footnote" tone="tertiary">
+              For training decisions, not medical diagnosis. Sudden or lasting changes in resting
+              heart rate, breathing or oxygen, or any symptoms, belong with a clinician.
+            </Text>
+          </View>
         </>
       ) : (
         <Card>
@@ -76,5 +82,5 @@ export default function Today() {
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', paddingVertical: spacing.lg },
-  disclaimer: { marginTop: spacing.sm },
+  footer: { gap: spacing.sm, marginTop: spacing.sm },
 });

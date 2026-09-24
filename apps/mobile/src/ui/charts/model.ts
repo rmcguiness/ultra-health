@@ -1,8 +1,8 @@
 import {
   addDays,
   daysBetween,
+  centeredMean,
   robustCenter,
-  rollingMean,
   toDense,
   valuesBetween,
   weightTrend,
@@ -20,7 +20,11 @@ export interface RangeSpec {
   readonly label: string;
   /** Days per window; undefined for All. D is one calendar day of raw readings. */
   readonly days: number | undefined;
-  /** Trailing window of the trend line in days (0 = no trend line). */
+  /**
+   * Width of the trend line's window in days (0 = no trend line). The window
+   * is centred on each day, so the trend sits under the readings it averages
+   * instead of lagging behind them.
+   */
   readonly trendDays: number;
   /**
    * Whether to draw the current "normal" band. It describes the 60 days before
@@ -68,6 +72,11 @@ export function windowFor(
 /** Days of data to fetch before the window so the trend and band exist from its first day. */
 export function leadInDays(range: RangeSpec): number {
   return range.showBand ? 66 : range.trendDays;
+}
+
+/** Days after the window the centred trend needs (when they exist) for its last days. */
+export function leadOutDays(range: RangeSpec): number {
+  return Math.floor(range.trendDays / 2);
 }
 
 // ── Chart geometry in data units ──────────────────────────────────────────
@@ -265,6 +274,34 @@ export interface Segment {
   readonly gap: boolean;
 }
 
+/**
+ * One point per x, in increasing x. Lines join each point to the next, so
+ * out-of-order input would draw a stroke backwards in time, and two readings
+ * at the same x would draw a vertical one. Same-x readings merge into their
+ * mean, weighted by how many readings each carries.
+ */
+export function inTimeOrder(points: readonly ChartPoint[]): ChartPoint[] {
+  const byX = new Map<number, { sum: number; n: number }>();
+  for (const p of points) {
+    const w = Math.max(1, p.n);
+    const e = byX.get(p.x);
+    if (e) {
+      e.sum += p.value * w;
+      e.n += w;
+    } else byX.set(p.x, { sum: p.value * w, n: w });
+  }
+  return [...byX].sort(([a], [b]) => a - b).map(([x, e]) => ({ x, value: e.sum / e.n, n: e.n }));
+}
+
+/** `points` if x already strictly increases, else a sorted copy without repeated x. */
+export function ascendingX<T extends { readonly x: number }>(points: readonly T[]): readonly T[] {
+  let ordered = true;
+  for (let i = 1; i < points.length && ordered; i++) ordered = points[i]!.x > points[i - 1]!.x;
+  if (ordered) return points;
+  const sorted = [...points].sort((a, b) => a.x - b.x);
+  return sorted.filter((p, i) => i === 0 || p.x !== sorted[i - 1]!.x);
+}
+
 export function segments(points: readonly ChartPoint[], gapThreshold: number): Segment[] {
   const out: Segment[] = [];
   for (let i = 1; i < points.length; i++) {
@@ -290,9 +327,10 @@ function weekStart(date: LocalDate): LocalDate {
 }
 
 /**
- * Daily ranges. `data` may start before the window (lead-in for the trend
- * and band). Cumulative metrics (steps, energy) are bars; on Y and All they
- * roll up to weekly averages per day so bars stay wider than a pixel.
+ * Daily ranges. `data` may start before the window and end after it (lead-in
+ * and lead-out for the centred trend and the band); only days inside the
+ * window become points. Cumulative metrics (steps, energy) are bars; on Y and
+ * All they roll up to weekly averages per day so bars stay wider than a pixel.
  */
 export function dailyChart(
   data: readonly DailyInput[],
@@ -320,41 +358,48 @@ export function dailyChart(
       if (!list) byWeek.set(w, (list = []));
       list.push(p.value);
     }
-    points = [...byWeek]
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([w, values]) => ({
+    points = inTimeOrder(
+      [...byWeek].map(([w, values]) => ({
         x: daysBetween(window.from, w) + 3,
         value: values.reduce((a, v) => a + v, 0) / values.length,
         n: values.length,
-      }));
+      })),
+    );
     slots = points.map((p) => p.x);
   } else {
-    points = visible.map((p) => ({ x: daysBetween(window.from, p.date), value: p.value, n: p.n }));
+    points = inTimeOrder(
+      visible.map((p) => ({ x: daysBetween(window.from, p.date), value: p.value, n: p.n })),
+    );
     slots = Array.from({ length: n }, (_, i) => i);
   }
 
-  // Trend over the lead-in plus the window, reported only inside the window.
+  // Trend over the lead-in, the window and the lead-out, reported only inside
+  // the window. Days after the last reading are simply empty, so at the right
+  // edge the centred window shrinks to the days that exist.
   const trendFrom = addDays(window.from, -Math.max(range.trendDays, 1));
-  const dense = toDense(
-    data.filter((p) => p.date >= trendFrom && p.date <= window.to),
-    trendFrom,
-    window.to,
-  );
+  const trendTo = addDays(window.to, leadOutDays(range));
+  const around = data.filter((p) => p.date >= trendFrom && p.date <= trendTo);
   let trend: TrendPoint[] = [];
   if (options.kalmanTrend) {
+    // The smoother (Rauch 1965) already uses readings on both sides of each day.
     const weights = data
-      .filter((p) => p.date <= window.to)
+      .filter((p) => p.date <= trendTo)
       .map((p) => ({ date: p.date, kg: p.value, standardized: true }));
     const first = weights[0]?.date;
-    const t = first ? weightTrend(weights, { from: first, to: window.to }) : undefined;
+    const last = weights.at(-1)?.date;
+    const t =
+      first && last
+        ? weightTrend(weights, { from: first, to: last > window.to ? last : window.to })
+        : undefined;
     trend = (t?.smoothed ?? [])
-      .filter((p) => p.date >= window.from)
+      .filter((p) => p.date >= window.from && p.date <= window.to)
       .map((p) => ({ x: daysBetween(window.from, p.date), value: p.level }));
   } else if (range.trendDays > 0) {
-    const rolled = rollingMean(dense, range.trendDays, Math.ceil(range.trendDays / 3));
-    rolled.values.forEach((v, i) => {
+    const dense = toDense(around, trendFrom, trendTo);
+    const smoothed = centeredMean(dense, range.trendDays, Math.ceil(range.trendDays / 3));
+    smoothed.values.forEach((v, i) => {
       const x = i - daysBetween(trendFrom, window.from);
-      if (v !== null && x >= 0) trend.push({ x, value: v });
+      if (v !== null && x >= 0 && x < n) trend.push({ x, value: v });
     });
   }
 
@@ -397,7 +442,7 @@ export function intradayChart(
   integers = false,
   display: { readonly scale: number; readonly offset: number } = IDENTITY,
 ): ChartModel {
-  const points = samples.map((s) => ({ x: s.minute, value: s.value, n: 1 }));
+  const points = inTimeOrder(samples.map((s) => ({ x: s.minute, value: s.value, n: 1 })));
   return {
     mark: 'line',
     points,

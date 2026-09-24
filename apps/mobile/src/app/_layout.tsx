@@ -74,8 +74,12 @@ export default function RootLayout() {
               <Stack.Screen name="connect" options={{ gestureEnabled: false }} />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
-                name="source/[id]"
-                options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 1] }}
+                name="about/[topic]"
+                options={{
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [0.6, 1],
+                  sheetGrabberVisible: true,
+                }}
               />
               <Stack.Screen
                 name="metric/[id]"

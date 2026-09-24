@@ -10,6 +10,7 @@ import {
   type PillarStatus,
   type ReadinessStatus,
   type SessionKind,
+  type SessionTarget,
   type WhatWorkedVerdict,
 } from '@ultra-health/core';
 
@@ -33,10 +34,10 @@ export const SESSION_COPY: Readonly<Record<SessionKind, { title: string; detail:
 export const READINESS_COPY: Readonly<
   Record<ReadinessStatus, { label: string; glyph: string; tone: ToneName }>
 > = {
-  ready: { label: 'Ready for hard training', glyph: '✓', tone: 'positive' },
+  ready: { label: 'Recovered', glyph: '✓', tone: 'positive' },
   normal: { label: 'Normal', glyph: '–', tone: 'secondary' },
-  hold_back: { label: 'Hold back today', glyph: '!', tone: 'warning' },
-  insufficient_data: { label: 'Not enough HRV data yet', glyph: '…', tone: 'tertiary' },
+  hold_back: { label: 'Below normal', glyph: '!', tone: 'warning' },
+  insufficient_data: { label: 'Learning your HRV', glyph: '…', tone: 'tertiary' },
 };
 
 export const STATE_COPY: Readonly<Record<AdaptationStateId, { label: string; tone: ToneName }>> = {
@@ -107,14 +108,66 @@ export const FEATURE_LABEL: Readonly<Record<FeatureId, string>> = {
 };
 
 export const WHAT_WORKED_COPY: Readonly<Record<WhatWorkedVerdict, string>> = {
-  keep_going:
-    'Your last 4 weeks look like your best-responding blocks. Keep doing what you’re doing.',
-  adjust: 'Your best-responding blocks differed from your last 4 weeks in the ways below.',
+  keep_going: 'Your last 4 weeks match your best blocks on what set them apart. Keep that up.',
+  adjust: 'Your best blocks differed from your last 4 weeks here:',
   no_clear_pattern: 'No training pattern clearly separates your best blocks yet.',
   insufficient_data: 'This needs at least 8 four-week blocks with fitness data.',
 };
 
-/** "Vesterinen 2016" from the registry, for compact source chips. */
+/** A "what worked" feature value in its own units. */
+export function formatFeature(feature: FeatureId, v: number): string {
+  switch (feature) {
+    case 'sleepHours':
+      return `${v.toFixed(1)} h`;
+    case 'stepsPerDay':
+      return Math.round(v).toLocaleString('en-US');
+    case 'sleepRegularity':
+      return String(Math.round(v));
+    default:
+      return v.toFixed(1);
+  }
+}
+
+/** "About 45 min · 106–133 bpm": the first line of a session target. */
+export function targetSummary(t: SessionTarget): string | undefined {
+  const parts: string[] = [];
+  if (t.minutes !== undefined) parts.push(`About ${t.minutes} min`);
+  const hr = t.heartRate;
+  if (hr?.low !== undefined && hr.high !== undefined) parts.push(`${hr.low}–${hr.high} bpm`);
+  else if (hr?.high !== undefined) parts.push(`under ${hr.high + 1} bpm`);
+  else if (hr?.low !== undefined) parts.push(`${hr.low}+ bpm`);
+  if (t.sets) {
+    parts.push(
+      `${t.sets.sets.low}–${t.sets.sets.high} sets of ${t.sets.reps.low}–${t.sets.reps.high} reps per major muscle group`,
+    );
+  }
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
+/** The structured option on hard days: 4 × 4 intervals in your own bpm. */
+export function intervalSummary(t: SessionTarget): string | undefined {
+  const i = t.intervals;
+  return i
+    ? `Try ${i.reps} × 4 min at ${i.work.low}–${i.work.high} bpm, with 3 min easy (about ${i.recovery} bpm) between.`
+    : undefined;
+}
+
+/** "Moderate cardio, about 45 min at 106–133 bpm" for the one-line alternative. */
+export function alternativeSummary(t: SessionTarget): string {
+  const title = SESSION_COPY[t.kind].title.toLowerCase();
+  const hr = t.heartRate;
+  const bpm =
+    hr?.low !== undefined && hr.high !== undefined
+      ? ` at ${hr.low}–${hr.high} bpm`
+      : hr?.high !== undefined
+        ? ` under ${hr.high + 1} bpm`
+        : hr?.low !== undefined
+          ? ` at ${hr.low}+ bpm`
+          : '';
+  return `${title.charAt(0).toUpperCase()}${title.slice(1)}${t.minutes !== undefined ? `, about ${t.minutes} min` : ''}${bpm}`;
+}
+
+/** "Vesterinen 2016" from the registry, for compact source lists. */
 export function shortCitation(id: CitationId): string {
   const c = CITATIONS[id];
   const surname = c.authors.split(/[ ,]/)[0] ?? c.authors;

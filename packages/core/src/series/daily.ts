@@ -82,6 +82,28 @@ export function rollingMedian(series: DenseSeries, window: number, minCount = 1)
   return rolling(series, window, minCount, median);
 }
 
+/**
+ * Mean over a window centred on each day, for drawing a trend under the
+ * readings. A trailing mean of N days is late by (N − 1) / 2 days, so its
+ * peaks and turns land after the readings that caused them; a centred window
+ * puts them on the right date. At the ends of the series the window is cut
+ * off rather than padded, so the last value uses only days that exist.
+ */
+export function centeredMean(series: DenseSeries, window: number, minCount = 1): DenseSeries {
+  const before = Math.floor((window - 1) / 2);
+  const after = window - 1 - before;
+  const out: (number | null)[] = series.values.map((_, i) => {
+    const values: number[] = [];
+    const hi = Math.min(series.values.length - 1, i + after);
+    for (let j = Math.max(0, i - before); j <= hi; j++) {
+      const v = series.values[j];
+      if (v !== null && v !== undefined) values.push(v);
+    }
+    return values.length >= minCount ? (mean(values) ?? null) : null;
+  });
+  return { from: series.from, to: series.to, values: out };
+}
+
 export function mapDense(series: DenseSeries, fn: (v: number) => number): DenseSeries {
   return { ...series, values: series.values.map((v) => (v === null ? null : fn(v))) };
 }

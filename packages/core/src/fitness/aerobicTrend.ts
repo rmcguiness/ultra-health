@@ -1,7 +1,7 @@
 import type { CitationId } from '../evidence/citations';
 import { valuesBetween, type DenseSeries } from '../series/daily';
 import { standardDeviation } from '../stats/descriptive';
-import { theilSen, trendDirection, type TrendEstimate } from '../stats/trend';
+import { theilSen, trendDirection, type TrendDirection, type TrendEstimate } from '../stats/trend';
 import { addDays, daysBetween, type LocalDate } from '../time/dates';
 
 export type FitnessMarker = 'vo2_max' | 'walking_hr' | 'resting_hr' | 'hr_recovery';
@@ -58,12 +58,28 @@ function typicalError(series: DenseSeries, from: LocalDate, to: LocalDate): numb
   return sd === undefined ? undefined : sd / Math.SQRT2;
 }
 
-function markerTrend(
-  marker: FitnessMarker,
+export interface SeriesTrend {
+  /** Undefined when there are too few readings to fit a trend. */
+  readonly direction: TrendDirection | undefined;
+  readonly trend: TrendEstimate | undefined;
+  /** Change over the window implied by the slope, series units. */
+  readonly change: number | undefined;
+  /** Typical error of a single reading (Hopkins 2000), the noise floor. */
+  readonly typicalError: number | undefined;
+}
+
+/**
+ * Robust direction of a daily series over the `windowDays` ending `date`:
+ * a Theil–Sen slope with its 90% interval (Sen 1968), called rising or
+ * falling only when the interval excludes zero and the fitted change is
+ * bigger than one reading's typical error (Hopkins 2000).
+ */
+export function seriesTrend(
   series: DenseSeries,
   date: LocalDate,
   windowDays: number,
-): MarkerTrend {
+  minPoints = 8,
+): SeriesTrend {
   const from = addDays(date, -(windowDays - 1));
   const points: { x: number; y: number }[] = [];
   const lo = Math.max(0, daysBetween(series.from, from));
@@ -72,22 +88,44 @@ function markerTrend(
     const v = series.values[i];
     if (v !== null && v !== undefined) points.push({ x: i - lo, y: v });
   }
-  // Sparse markers (VO₂max is estimated a few times a week) need fewer points.
-  const trend = theilSen(points, { minPoints: marker === 'vo2_max' ? 4 : 8 });
+  const trend = theilSen(points, { minPoints });
   // Noise floor from the preceding 90 days plus the window.
   const te = typicalError(series, addDays(from, -90), date);
   if (!trend || te === undefined) {
-    return { marker, verdict: 'insufficient_data', trend, change: undefined, typicalError: te };
+    return { direction: undefined, trend, change: undefined, typicalError: te };
   }
-  const change = trend.slope * (windowDays - 1);
-  const direction = trendDirection(trend, windowDays - 1, te);
+  return {
+    direction: trendDirection(trend, windowDays - 1, te),
+    trend,
+    change: trend.slope * (windowDays - 1),
+    typicalError: te,
+  };
+}
+
+function markerTrend(
+  marker: FitnessMarker,
+  series: DenseSeries,
+  date: LocalDate,
+  windowDays: number,
+): MarkerTrend {
+  // Sparse markers (VO₂max is estimated a few times a week) need fewer points.
+  const t = seriesTrend(series, date, windowDays, marker === 'vo2_max' ? 4 : 8);
+  if (t.direction === undefined) {
+    return {
+      marker,
+      verdict: 'insufficient_data',
+      trend: t.trend,
+      change: undefined,
+      typicalError: t.typicalError,
+    };
+  }
   const verdict: MarkerVerdict =
-    direction === 'flat'
+    t.direction === 'flat'
       ? 'steady'
-      : (direction === 'rising') === (DIRECTION[marker] === 1)
+      : (t.direction === 'rising') === (DIRECTION[marker] === 1)
         ? 'improving'
         : 'declining';
-  return { marker, verdict, trend, change, typicalError: te };
+  return { marker, verdict, trend: t.trend, change: t.change, typicalError: t.typicalError };
 }
 
 /**

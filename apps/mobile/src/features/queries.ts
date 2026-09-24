@@ -31,6 +31,7 @@ import {
   dailyChart,
   intradayChart,
   leadInDays,
+  leadOutDays,
   rangeSpec,
   windowFor,
   type ChartModel,
@@ -45,6 +46,8 @@ function useDataVersion(): number {
 }
 
 const reader = async () => (await getServices()).db.reader;
+
+const minDate = (a: LocalDate, b: LocalDate) => (a < b ? a : b);
 
 export function today(): LocalDate {
   return localDateKey(Date.now());
@@ -177,7 +180,11 @@ export function useMetricChart(
       const series = await getDailySeries(
         db,
         metric,
-        { from: addDays(window.from, -leadInDays(range)), to: window.to },
+        {
+          from: addDays(window.from, -leadInDays(range)),
+          // The centred trend reads a few days past the window when they exist.
+          to: minDate(addDays(window.to, leadOutDays(range)), to),
+        },
         sourceKind,
       );
       const model = dailyChart(series.points, range, window, {

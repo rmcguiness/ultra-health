@@ -48,6 +48,7 @@ The research brief behind it is [`research/adaptation-signals.html`](research/ad
 | What worked for you                        | `insights/whatWorked.ts`                           | C                 | montero2017, barnett2005                                                    |
 | In-shape scorecard                         | `insights/scorecard.ts`                            | A/B               | bull2020, paluch2022, watson2015, windred2024, kodama2009                   |
 | Today's plan & weekly insights             | `recommend/plan.ts`                                | B                 | vesterinen2016, stanley2013, garber2011, bull2020, nielsen2014, montero2017 |
+| Session targets & weekly checklist         | `recommend/targets.ts`                             | A/B               | garber2011, bull2020, helgerud2007, kiviniemi2007, watson2015               |
 
 The app side (`apps/mobile/src/analytics/`) reads the synced database into these inputs
 (`inputs.ts`) and composes a morning view (`analyze.ts`) that uses only data available that
@@ -154,6 +155,9 @@ alert days showed reduced movement, as real sick days do.
   a trend only (caserman2024).
 - Projection: the fitted line extended with slope-interval bounds, framed "if the current
   trend continues".
+- The same test (`seriesTrend`) drives the Trends summary over 3, 6 or 12 months: the
+  fitness verdict over that range, and HRV on a log scale. HRV gets a direction only, never a
+  good/bad tone, because a rising HRV can be saturation in well-trained people (plews2013).
 
 ### Weight
 
@@ -239,6 +243,29 @@ Ordered, with a reason and evidence for every step:
    - < 150 equivalent minutes → moderate aerobic;
    - carrying fatigue → easy aerobic or recovery.
 
+Every reason carries a one-line summary for the plan card and the full reasoning for its info
+sheet; the first reason always explains the primary choice. When no gap remains, the reason
+says so (strength waiting out its 48 hours, or all weekly targets met).
+
+### Session targets and the weekly checklist
+
+How long and how hard, in the user's own numbers (`recommend/targets.ts`):
+
+- Heart rate from the heart rate reserve (Karvonen) between the 30-day median resting HR and
+  HRmax (observed or age-predicted, tanaka2001): moderate 40–59% HRR, vigorous from 60%
+  (garber2011). Easy days get a ceiling just under vigorous; the HRV-guided trials kept low-HRV
+  days at low intensity (kiviniemi2007). No bpm without both anchors.
+- Hard days also offer the 4 × 4 protocol: 4 min at 90–95% HRmax with 3 min at 70% HRmax
+  between, which raised VO₂max more than the same work done steadily (helgerud2007, RCT).
+- Length: the median of the user's own sessions of that family over 90 days (≥ 3 sessions),
+  never below the per-session minimum: 30 min moderate, 20 min vigorous (garber2011).
+- Strength: 2–4 sets of 8–12 reps per major muscle group (garber2011); length only when the
+  user has ≥ 3 strength sessions to take a median from.
+- Weekly checklist over the 7 days ending today (so a workout counts once synced): WHO
+  moderate-equivalent minutes and strength days (bull2020), and a 7-hour sleep average when at
+  least 3 nights have data (watson2015). The cardio gap is expressed as sessions of the user's
+  usual length, never under 30 minutes.
+
 Weekly insights: aerobic or strength gap to WHO; a > 30% two-week load increase (associated
 with overuse injury in novice runners, nielsen2014; the 10% rule itself did not prevent
 injuries in an RCT, buist2008); a 6-week plateau while meeting guidelines (raise the dose:
@@ -258,15 +285,38 @@ burned (wrist estimates miss by > 20%, shcherbina2017).
 
 ## Where each output appears in the app
 
-- **Today**: plan, readiness, illness watch, last 7 days vs WHO targets, training state and
-  weekly insights, in-shape scorecard, fitness trend and VO₂max projection, weight trend and
-  forecast, what worked, detraining outlook. Every statement has tappable sources.
-- **Trends**: adaptation timeline (state, load, recovery, walking HR, weight) with one shared
-  crosshair, the planner, the recovery compass and the sleep barcode, all following the
-  selected day.
+Cards show the answer and one line of why. Each card's ⓘ opens a sheet with the numbers behind
+it, what they mean, how they are worked out and the papers (`features/about/content.ts`), so
+no card carries method notes or source chips.
+
+- **Today**, top to bottom: banners only when something needs attention (illness watch,
+  detraining outlook, a > 30% load ramp); the plan with its concrete target, one-line reason,
+  recovery status and one alternative; the weekly checklist; the in-shape scorecard as tiles
+  (each opens its pillar); the 4-week VO₂max and weight forecasts; what worked, once it has a
+  pattern (a one-line note before that).
+- **Trends**: a plain summary for the range (cardio fitness, training load, HRV, weight), each
+  row opening its chart; training and recovery on one timeline (state ribbon, load with
+  fitness and fatigue, recovery vs normal) with one shared crosshair; the planner; sleep and
+  the recovery compass as expandable rows that follow the selected day.
 - **Metric pages**: data-rich charts for D/W/M/3M/6M/Y/All with a trend overlay, dashed
   joins across missing days, the personal normal band on short ranges and tap or
   press-and-drag inspection.
+
+### How lines are drawn
+
+- Every line joins points in increasing time order with straight segments. Points are sorted
+  and same-x readings merged before drawing, so a line can never fold back in time, and no
+  fitted curve can overshoot the readings (unit-tested for every range).
+- The trend overlay is a **centred** moving mean (7 days up to 3M, 28 days beyond). A trailing
+  mean of N days runs (N − 1)/2 days late, drawing peaks after the readings that caused them;
+  the centred window puts them on the right date. It reads up to N/2 days past a past window,
+  and at the latest day the window shrinks to the days that exist. Weight uses the two-sided
+  Kalman smoother (rauch1965) instead.
+- The timeline's recovery lane plots each day's own reading (SD from that day's baseline) as a
+  centred 7-day mean with at least 3 readings. Readiness still decides from the trailing 7-day
+  mean, as in the trials; drawn as history, that trailing mean would put an illness peak
+  about 3 days after the red ribbon day that flagged it.
+- The recovery compass plots days as dots with no connecting line: neither axis is time.
 
 ## Back-testing
 

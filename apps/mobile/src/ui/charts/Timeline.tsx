@@ -1,5 +1,5 @@
 import { Canvas, DashPathEffect, Path, Skia, type SkPath } from '@shopify/react-native-skia';
-import { METRICS, toDisplayValue, type AdaptationStateId } from '@ultra-health/core';
+import type { AdaptationStateId } from '@ultra-health/core';
 import * as Haptics from 'expo-haptics';
 import { memo, useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -8,16 +8,15 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { TimelineModel } from '@/features/trends/model';
 
 import { Text } from '../components/Text';
-import { categoryColors, colors, series, spacing, stateColors } from '../theme';
+import { colors, series, spacing, stateColors } from '../theme';
 import { STATE_COPY } from '@/features/today/copy';
 
 import { compactNumber } from './format';
 import { niceTicks } from './model';
-import { dotsPath, linePaths, type Pt } from './paths';
+import { linePaths } from './paths';
 
-const Y_GUTTER = 40;
+const Y_GUTTER = 48;
 const X_AXIS = 18;
-const toLb = (kg: number) => toDisplayValue(METRICS.body_mass, kg);
 
 interface TimelineProps {
   readonly model: TimelineModel;
@@ -27,24 +26,16 @@ interface TimelineProps {
 }
 
 /**
- * The adaptation timeline: every clock on one time axis. Lanes never share a
- * y-scale, so no correlation is implied by position; one crosshair reads
- * them all on the same day.
+ * Training and recovery on one time axis: the state ribbon, training load
+ * and recovery. Lanes never share a y-scale, so no correlation is implied by
+ * position; one crosshair reads them all on the same day. Lines are straight
+ * segments between consecutive days, never fitted curves.
  */
 export function Timeline({ model, selected, onSelect }: TimelineProps) {
   const [width, setWidth] = useState(0);
   const plotW = Math.max(0, width - Y_GUTTER);
   const dayW = plotW / Math.max(1, model.days);
   const sx = useMemo(() => (i: number) => (i + 0.5) * dayW, [dayW]);
-  // Weight is drawn in the unit the user reads, so its axis labels are round.
-  const weightPts = useMemo(
-    () => model.weight.map((p) => ({ x: p.x, y: toLb(p.y) })),
-    [model.weight],
-  );
-  const weightTrendPts = useMemo(
-    () => model.weightTrend.map((p) => ({ x: p.x, y: toLb(p.y), lo: toLb(p.lo), hi: toLb(p.hi) })),
-    [model.weightTrend],
-  );
 
   const gesture = useMemo(() => {
     const snap = (px: number) =>
@@ -82,33 +73,6 @@ export function Timeline({ model, selected, onSelect }: TimelineProps) {
             </Lane>
             <LoadLane model={model} width={plotW} sx={sx} dayW={dayW} />
             <RecoveryLane model={model} width={plotW} sx={sx} />
-            {model.walking.length > 0 ? (
-              <PointsLane
-                title="Walking heart rate"
-                subtitle="bpm · lower at the same pace means fitter"
-                points={model.walking}
-                trend={model.walkingTrend}
-                color={categoryColors.cardiovascular}
-                format={compactNumber}
-                width={plotW}
-                sx={sx}
-                trendLabel="7-day average"
-              />
-            ) : null}
-            {model.weight.length > 0 ? (
-              <PointsLane
-                title="Weight"
-                subtitle={`${METRICS.body_mass.display.unit} · trend with 90% band`}
-                points={weightPts}
-                trend={weightTrendPts}
-                band={weightTrendPts}
-                color={categoryColors.body_composition}
-                format={compactNumber}
-                width={plotW}
-                sx={sx}
-                trendLabel="Trend (filtered)"
-              />
-            ) : null}
             <View style={{ height: X_AXIS, width: plotW }}>
               {model.ticks.map((t) => (
                 <Text
@@ -140,25 +104,16 @@ export function Timeline({ model, selected, onSelect }: TimelineProps) {
 
 function Lane({
   title,
-  subtitle,
   legend,
   children,
 }: {
   title: string;
-  subtitle?: string;
   legend?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <View style={styles.lane}>
-      <View style={styles.laneHead}>
-        <Text variant="caption">{title}</Text>
-        {subtitle ? (
-          <Text variant="footnote" tone="tertiary">
-            {subtitle}
-          </Text>
-        ) : null}
-      </View>
+      <Text variant="caption">{title}</Text>
       {legend}
       {children}
     </View>
@@ -172,19 +127,13 @@ function Key({
 }: {
   color: string;
   label: string;
-  kind?: 'line' | 'bar' | 'dot' | 'band';
+  kind?: 'line' | 'bar' | 'band';
 }) {
   return (
     <View style={styles.key}>
       <View
         style={[
-          kind === 'bar'
-            ? styles.keyBar
-            : kind === 'dot'
-              ? styles.keyDot
-              : kind === 'band'
-                ? styles.keyBand
-                : styles.keyLine,
+          kind === 'bar' ? styles.keyBar : kind === 'band' ? styles.keyBand : styles.keyLine,
           { backgroundColor: color },
         ]}
       />
@@ -215,20 +164,23 @@ function YLabels({
   ticks: readonly number[];
   y: (v: number) => number;
   width: number;
-  format: (v: number) => string;
+  format: (v: number) => string | undefined;
 }) {
   return (
     <>
-      {ticks.map((t) => (
-        <Text
-          key={t}
-          variant="footnote"
-          tone="tertiary"
-          style={[styles.yLabel, { top: y(t) - 7, left: width + 6 }]}
-        >
-          {format(t)}
-        </Text>
-      ))}
+      {ticks.map((t) => {
+        const label = format(t);
+        return label === undefined ? null : (
+          <Text
+            key={t}
+            variant="footnote"
+            tone="tertiary"
+            style={[styles.yLabel, { top: y(t) - 7, left: width + 6 }]}
+          >
+            {label}
+          </Text>
+        );
+      })}
     </>
   );
 }
@@ -286,6 +238,7 @@ const LoadLane = memo(function LoadLane({
   dayW: number;
 }) {
   const h = 84;
+  const empty = !model.load.some((p) => p.y > 0) && !model.fitness.some((p) => p.y >= 0.5);
   const draw = useMemo(() => {
     const max = Math.max(1, ...model.load.map((p) => p.y), ...model.fitness.map((p) => p.y));
     const ticks = niceTicks(0, max, 3, true);
@@ -308,29 +261,36 @@ const LoadLane = memo(function LoadLane({
   return (
     <Lane
       title="Training load"
-      subtitle="TRIMP from workout heart rate"
       legend={
-        <View style={styles.keys}>
-          <Key color={colors.textTertiary} label="Daily load" kind="bar" />
-          <Key color={series.one} label="Fitness (42-day)" />
-          <Key color={series.two} label="Fatigue (7-day)" />
-        </View>
+        empty ? undefined : (
+          <View style={styles.keys}>
+            <Key color={colors.textTertiary} label="Workout" kind="bar" />
+            <Key color={series.one} label="Fitness" />
+            <Key color={series.two} label="Fatigue" />
+          </View>
+        )
       }
     >
-      <View>
-        <Canvas style={{ width, height: h }}>
-          <Path
-            path={draw.grid}
-            color={colors.border}
-            style="stroke"
-            strokeWidth={StyleSheet.hairlineWidth}
-          />
-          <Path path={draw.bars} color={colors.textTertiary} opacity={0.8} />
-          <Path path={draw.fitness} color={series.one} style="stroke" strokeWidth={2} />
-          <Path path={draw.fatigue} color={series.two} style="stroke" strokeWidth={1.5} />
-        </Canvas>
-        <YLabels ticks={draw.ticks} y={draw.y} width={width} format={compactNumber} />
-      </View>
+      {empty ? (
+        <Text variant="caption" tone="tertiary" style={styles.empty}>
+          No workouts with heart rate in this range.
+        </Text>
+      ) : (
+        <View>
+          <Canvas style={{ width, height: h }}>
+            <Path
+              path={draw.grid}
+              color={colors.border}
+              style="stroke"
+              strokeWidth={StyleSheet.hairlineWidth}
+            />
+            <Path path={draw.bars} color={colors.textTertiary} opacity={0.8} />
+            <Path path={draw.fitness} color={series.one} style="stroke" strokeWidth={2} />
+            <Path path={draw.fatigue} color={series.two} style="stroke" strokeWidth={1.5} />
+          </Canvas>
+          <YLabels ticks={draw.ticks} y={draw.y} width={width} format={compactNumber} />
+        </View>
+      )}
     </Lane>
   );
 });
@@ -368,13 +328,12 @@ const RecoveryLane = memo(function RecoveryLane({
   }, [model, width, sx]);
   return (
     <Lane
-      title="Recovery"
-      subtitle="7-day mean vs your baseline, SD"
+      title="Recovery vs your normal"
       legend={
         <View style={styles.keys}>
           <Key color={series.one} label="HRV" />
           <Key color={series.two} label="Resting HR" />
-          <Key color={colors.baselineBand} label="Normal (±0.5 SD)" kind="band" />
+          <Key color={colors.baselineBand} label="Normal range" kind="band" />
         </View>
       }
     >
@@ -411,110 +370,13 @@ const RecoveryLane = memo(function RecoveryLane({
           </Path>
           <Path path={draw.rhr.solid} color={series.two} style="stroke" strokeWidth={2} />
         </Canvas>
+        {/* Direction words, not SD units: HRV up is good, resting HR up is not. */}
         <YLabels
-          ticks={draw.ticks}
+          ticks={[draw.ticks[0]!, 0, draw.ticks[draw.ticks.length - 1]!]}
           y={draw.y}
           width={width}
-          format={(v) => (v > 0 ? `+${v}` : String(v))}
+          format={(v) => (v > 0 ? 'Above' : v < 0 ? 'Below' : 'Normal')}
         />
-      </View>
-    </Lane>
-  );
-});
-
-const PointsLane = memo(function PointsLane({
-  title,
-  subtitle,
-  points,
-  trend,
-  band,
-  color,
-  format,
-  width,
-  sx,
-  trendLabel,
-}: {
-  title: string;
-  subtitle: string;
-  points: readonly Pt[];
-  trend: readonly Pt[];
-  band?: readonly (Pt & { lo: number; hi: number })[];
-  color: string;
-  format: (v: number) => string;
-  width: number;
-  sx: (i: number) => number;
-  trendLabel: string;
-}) {
-  const h = 72;
-  const draw = useMemo(() => {
-    const values = [
-      ...points.map((p) => p.y),
-      ...trend.map((p) => p.y),
-      ...(band ?? []).flatMap((p) => [p.lo, p.hi]),
-    ];
-    const ticks = niceTicks(Math.min(...values), Math.max(...values), 3);
-    const lo = ticks[0] ?? 0;
-    const hi = ticks[ticks.length - 1] ?? 1;
-    const y = (v: number) => 2 + (1 - (v - lo) / (hi - lo || 1)) * (h - 4);
-    let bandPath: SkPath | undefined;
-    if (band && band.length > 1) {
-      bandPath = Skia.Path.Make();
-      bandPath.moveTo(sx(band[0]!.x), y(band[0]!.hi));
-      for (const p of band) bandPath.lineTo(sx(p.x), y(p.hi));
-      for (let i = band.length - 1; i >= 0; i--) bandPath.lineTo(sx(band[i]!.x), y(band[i]!.lo));
-      bandPath.close();
-    }
-    const joins = linePaths(points, sx, y);
-    return {
-      ticks,
-      y,
-      grid: gridPath(ticks, y, width),
-      band: bandPath,
-      joins,
-      dots: dotsPath(points, sx, y, points.length > 200 ? 1.4 : 2.2),
-      trend: linePaths(trend, sx, y, 1.5).solid,
-    };
-  }, [points, trend, band, width, sx]);
-  return (
-    <Lane
-      title={title}
-      subtitle={subtitle}
-      legend={
-        <View style={styles.keys}>
-          <Key color={color} label="Reading" kind="dot" />
-          <Key color={colors.text} label={trendLabel} />
-        </View>
-      }
-    >
-      <View>
-        <Canvas style={{ width, height: h }}>
-          {draw.band ? <Path path={draw.band} color={colors.baselineBand} /> : null}
-          <Path
-            path={draw.grid}
-            color={colors.border}
-            style="stroke"
-            strokeWidth={StyleSheet.hairlineWidth}
-          />
-          <Path path={draw.joins.dashed} color={color} opacity={0.3} style="stroke" strokeWidth={1}>
-            <DashPathEffect intervals={[3, 4]} />
-          </Path>
-          <Path
-            path={draw.joins.solid}
-            color={color}
-            opacity={0.35}
-            style="stroke"
-            strokeWidth={1}
-          />
-          <Path path={draw.dots} color={color} opacity={0.9} />
-          <Path
-            path={draw.trend}
-            color={colors.text}
-            opacity={0.9}
-            style="stroke"
-            strokeWidth={2}
-          />
-        </Canvas>
-        <YLabels ticks={draw.ticks} y={draw.y} width={width} format={format} />
       </View>
     </Lane>
   );
@@ -522,12 +384,11 @@ const PointsLane = memo(function PointsLane({
 
 const styles = StyleSheet.create({
   lane: { marginBottom: spacing.md, gap: 4 },
-  laneHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap' },
+  empty: { paddingVertical: spacing.md },
   keys: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: 2 },
   key: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   keyLine: { width: 12, height: 2.5, borderRadius: 1 },
   keyBar: { width: 5, height: 9, borderRadius: 1 },
-  keyDot: { width: 7, height: 7, borderRadius: 3.5 },
   keyBand: { width: 12, height: 8, borderRadius: 2 },
   yLabel: { position: 'absolute', fontVariant: ['tabular-nums'] },
   xLabel: { position: 'absolute', width: 48, textAlign: 'center', top: 2 },

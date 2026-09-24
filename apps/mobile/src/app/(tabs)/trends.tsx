@@ -3,9 +3,9 @@ import {
   mean,
   sleepRegularityIndex,
   startOfLocalDate,
-  valueOn,
   valuesBetween,
 } from '@ultra-health/core';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -13,40 +13,54 @@ import { useTimeline } from '@/features/analytics';
 import { READINESS_COPY, STATE_COPY } from '@/features/today/copy';
 import { barcode, timelineModel } from '@/features/trends/model';
 import { PlannerCard } from '@/features/trends/PlannerCard';
+import { trendSummary, type SummaryRow } from '@/features/trends/summary';
 import { formatDay } from '@/ui/charts/model';
-import { Compass } from '@/ui/charts/Compass';
+import { Compass, type CompassPoint } from '@/ui/charts/Compass';
 import { SleepBarcode } from '@/ui/charts/SleepBarcode';
 import { Timeline } from '@/ui/charts/Timeline';
+import { Chevron, Disclosure } from '@/ui/components/Blocks';
 import { Card } from '@/ui/components/Card';
-import { Pill } from '@/ui/components/Pill';
+import { CardHeader, InfoButton } from '@/ui/components/CardHeader';
 import { Screen } from '@/ui/components/Screen';
-import { SourceChips } from '@/ui/components/SourceChips';
 import { Text } from '@/ui/components/Text';
 import { colors, radii, spacing } from '@/ui/theme';
 
 const RANGES = [
-  { id: '3M', days: 91 },
-  { id: '6M', days: 182 },
-  { id: 'Y', days: 365 },
+  { id: '3M', days: 91, title: 'Last 3 months' },
+  { id: '6M', days: 182, title: 'Last 6 months' },
+  { id: 'Y', days: 365, title: 'Last 12 months' },
 ] as const;
 
 type TrendRange = (typeof RANGES)[number]['id'];
 
-const signed = (v: number | undefined) =>
-  v === undefined ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}`;
+const GLYPH = { up: '↑', down: '↓', flat: '→' } as const;
+
+/** Where the latest day sits on the compass, in its own corner labels. */
+function quadrant(p: CompassPoint | undefined): string {
+  if (!p) return 'No data';
+  // Inside the ±0.5 SD band on both axes is simply normal.
+  if (Math.abs(p.hrv) < 0.5 && Math.abs(p.rhr) < 0.5) return 'Normal';
+  if (p.hrv >= 0) return p.rhr <= 0 ? 'Recovered' : 'Mixed';
+  return p.rhr > 0 ? 'Strained or unwell' : 'Deep fatigue?';
+}
 
 /**
- * Every clock on one axis (the adaptation timeline), then the recovery
- * compass and sleep barcode for whichever day is selected.
+ * How you are changing: a plain summary for the range, then training and
+ * recovery on one timeline, the what-if planner, and sleep and the recovery
+ * compass for whichever day is selected.
  */
 export default function Trends() {
   const [rangeId, setRangeId] = useState<TrendRange>('3M');
-  const days = RANGES.find((r) => r.id === rangeId)!.days;
-  const { data, error, isPending } = useTimeline(days);
+  const range = RANGES.find((r) => r.id === rangeId)!;
+  const { data, error, isPending } = useTimeline(range.days);
 
   const model = useMemo(
     () => (data ? timelineModel(data.inputs, data.days, data.from, data.to, rangeId) : undefined),
     [data, rangeId],
+  );
+  const summary = useMemo(
+    () => (data ? trendSummary(data.inputs, data.to, range.days) : []),
+    [data, range.days],
   );
 
   const [selection, setSelection] = useState<{ range: TrendRange; day: number }>();
@@ -82,15 +96,20 @@ export default function Trends() {
     const hours = inputs.series.sleepHours
       ? mean(valuesBetween(inputs.series.sleepHours, from, focusDate))
       : undefined;
-    return {
-      nights: barcode(inputs.asleep, focusDate, 28, startOfLocalDate),
-      sri,
-      hours,
-    };
+    return { nights: barcode(inputs.asleep, focusDate, 28, startOfLocalDate), sri, hours };
   }, [data, focusDate]);
 
+  const sleepSummary = sleep
+    ? [
+        sleep.sri ? `${Math.round(sleep.sri.sri)} regularity` : undefined,
+        sleep.hours !== undefined ? `${sleep.hours.toFixed(1)} h` : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · ') || 'No data'
+    : 'No data';
+
   return (
-    <Screen title="Trends" subtitle="Every clock on one timeline">
+    <Screen title="Trends" subtitle="How you’re changing">
       <View style={styles.segmented} accessibilityRole="tablist">
         {RANGES.map((r) => (
           <Pressable
@@ -121,114 +140,83 @@ export default function Trends() {
         <>
           <Card>
             <View style={styles.stack}>
-              <Text variant="footnote" tone="tertiary">
-                {focusDate ? formatDay(focusDate, data.to).toUpperCase() : ''}
-                {selected === undefined ? ' · LATEST' : ''}
-              </Text>
-              {focus ? (
-                <>
-                  <View style={styles.rowWrap}>
-                    <Pill
-                      glyph="•"
-                      label={STATE_COPY[focus.state.state].label}
-                      tone={STATE_COPY[focus.state.state].tone}
-                    />
-                    <Pill
-                      glyph={READINESS_COPY[focus.readiness.status].glyph}
-                      label={READINESS_COPY[focus.readiness.status].label}
-                      tone={READINESS_COPY[focus.readiness.status].tone}
-                    />
-                  </View>
-                  <Text variant="caption" tone="secondary">
-                    {focus.state.reason}
-                  </Text>
-                  <View style={styles.grid}>
-                    <Stat label="Fitness" value={model.fitness[focusIndex]?.y.toFixed(0) ?? '–'} />
-                    <Stat label="Fatigue" value={model.fatigue[focusIndex]?.y.toFixed(0) ?? '–'} />
-                    <Stat label="Day's load" value={model.load[focusIndex]?.y.toFixed(0) ?? '–'} />
-                    <Stat label="HRV (SD)" value={signed(focus.hrvZ7)} />
-                    <Stat label="Resting HR (SD)" value={signed(focus.rhrZ7)} />
-                    <Stat
-                      label="Walking HR"
-                      value={
-                        data.inputs.series.walkingHr && focusDate
-                          ? (valueOn(data.inputs.series.walkingHr, focusDate)?.toFixed(0) ?? '–')
-                          : '–'
-                      }
-                    />
-                  </View>
-                  <SourceChips ids={focus.state.evidence} />
-                </>
-              ) : null}
+              <CardHeader title={range.title} topic="trends" />
+              {summary.map((row, i) => (
+                <SummaryLine key={row.id} row={row} first={i === 0} />
+              ))}
             </View>
           </Card>
 
           <Card>
-            <Timeline model={model} selected={selected} onSelect={onSelect} />
-            <Text variant="footnote" tone="tertiary">
-              Tap a day, or touch and hold and drag. Each lane has its own scale; nothing is plotted
-              on a shared axis.
-            </Text>
-            <SourceChips ids={['morton1990', 'plews2013', 'coyle1986', 'kalman1960']} />
+            <View style={styles.stack}>
+              <CardHeader title="Training and recovery" topic="timeline" />
+              <Text variant="caption" numberOfLines={1}>
+                {focusDate ? formatDay(focusDate, data.to) : ''}
+                {focus
+                  ? ` · ${STATE_COPY[focus.state.state].label} · ${READINESS_COPY[focus.readiness.status].label}`
+                  : ''}
+                {selected === undefined ? (
+                  <Text variant="caption" tone="tertiary">
+                    {'  '}latest
+                  </Text>
+                ) : null}
+              </Text>
+              <Timeline model={model} selected={selected} onSelect={onSelect} />
+            </View>
           </Card>
 
           <PlannerCard inputs={data.inputs} />
 
-          <Card>
-            <View style={styles.stack}>
-              <Text variant="footnote" tone="tertiary">
-                RECOVERY COMPASS · 28 DAYS
-              </Text>
-              {compassPoints.length > 0 ? (
-                <Compass points={compassPoints} />
-              ) : (
-                <Text tone="secondary">Needs HRV and resting heart rate baselines.</Text>
-              )}
-              <SourceChips ids={['plews2013', 'buchheit2014', 'altini2021']} />
-            </View>
-          </Card>
+          <Disclosure
+            title="Sleep · 28 nights"
+            summary={sleepSummary}
+            accessory={<InfoButton topic="sleep" label="Sleep" />}
+          >
+            {sleep ? <SleepBarcode nights={sleep.nights} /> : null}
+          </Disclosure>
 
-          <Card>
-            <View style={styles.stack}>
-              <Text variant="footnote" tone="tertiary">
-                SLEEP · 28 NIGHTS
-              </Text>
-              {sleep ? (
-                <>
-                  <View style={styles.grid}>
-                    <Stat
-                      label="Regularity (SRI)"
-                      value={sleep.sri ? sleep.sri.sri.toFixed(0) : '–'}
-                    />
-                    <Stat
-                      label="Average asleep"
-                      value={sleep.hours !== undefined ? `${sleep.hours.toFixed(1)} h` : '–'}
-                    />
-                  </View>
-                  <SleepBarcode nights={sleep.nights} />
-                  <Text variant="footnote" tone="tertiary">
-                    SRI runs from −100 (random) to 100 (identical timing every day). Regularity
-                    predicted mortality more strongly than duration.
-                  </Text>
-                </>
-              ) : null}
-              <SourceChips ids={['phillips2017', 'windred2024', 'watson2015']} />
-            </View>
-          </Card>
+          <Disclosure
+            title="Recovery compass"
+            summary={quadrant(compassPoints.at(-1))}
+            accessory={<InfoButton topic="compass" label="Recovery compass" />}
+          >
+            {compassPoints.length > 0 ? (
+              <Compass points={compassPoints} />
+            ) : (
+              <Text tone="secondary">Needs HRV and resting heart rate baselines.</Text>
+            )}
+          </Disclosure>
         </>
       )}
     </Screen>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function SummaryLine({ row, first }: { row: SummaryRow; first: boolean }) {
+  const router = useRouter();
+  const metric = row.metric;
   return (
-    <View style={styles.stat}>
-      <Text variant="footnote" tone="tertiary">
-        {label.toUpperCase()}
+    <Pressable
+      disabled={!metric}
+      onPress={() => metric && router.push({ pathname: '/metric/[id]', params: { id: metric } })}
+      accessibilityRole={metric ? 'button' : undefined}
+      accessibilityLabel={`${row.label}: ${row.verdict}${row.detail ? `, ${row.detail}` : ''}`}
+      style={({ pressed }) => [styles.line, !first && styles.lineBorder, pressed && styles.pressed]}
+    >
+      <View style={styles.flex}>
+        <Text variant="body">{row.label}</Text>
+        {row.detail ? (
+          <Text variant="caption" tone="tertiary">
+            {row.detail}
+          </Text>
+        ) : null}
+      </View>
+      <Text variant="caption" tone={row.tone}>
+        {row.direction ? `${GLYPH[row.direction]} ` : ''}
+        {row.verdict}
       </Text>
-      <Text variant="headline">{value}</Text>
-    </View>
+      {metric ? <Chevron /> : <View style={styles.chevronSpace} />}
+    </Pressable>
   );
 }
 
@@ -242,7 +230,14 @@ const styles = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radii.sm },
   segmentActive: { backgroundColor: colors.surfaceRaised },
   stack: { gap: spacing.sm },
-  rowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
-  stat: { width: '33.33%', gap: 2 },
+  flex: { flex: 1 },
+  pressed: { opacity: 0.6 },
+  line: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  lineBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  chevronSpace: { width: 12 },
 });

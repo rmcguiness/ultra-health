@@ -12,8 +12,8 @@ import type { AnalyticsInputs } from '@/analytics/inputs';
 import { today } from '@/features/queries';
 import { ProjectionChart } from '@/ui/charts/ProjectionChart';
 import { Card } from '@/ui/components/Card';
+import { CardHeader } from '@/ui/components/CardHeader';
 import { Pill } from '@/ui/components/Pill';
-import { SourceChips } from '@/ui/components/SourceChips';
 import { Text } from '@/ui/components/Text';
 import { colors, radii, series, spacing } from '@/ui/theme';
 
@@ -51,9 +51,7 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
     return (
       <Card>
         <View style={styles.stack}>
-          <Text variant="footnote" tone="tertiary">
-            PLAN THE NEXT 4 WEEKS
-          </Text>
+          <CardHeader title="What if…" topic="planner" />
           <Text tone="secondary">
             The planner works in sessions like yours, so it needs at least 6 workouts with heart
             rate in the last 90 days.
@@ -73,9 +71,7 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
   return (
     <Card>
       <View style={styles.stack}>
-        <Text variant="footnote" tone="tertiary">
-          PLAN THE NEXT 4 WEEKS
-        </Text>
+        <CardHeader title="What if…" topic="planner" />
         <View style={styles.rowBetween}>
           <Text variant="headline">Sessions a week</Text>
           <View style={styles.stepper}>
@@ -104,15 +100,11 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
               style={[styles.segment, i.id === intensity && styles.segmentActive]}
             >
               <Text variant="caption" tone={i.id === intensity ? 'primary' : 'secondary'}>
-                {i.label} · {Math.round(profile[i.id])}
+                {i.label}
               </Text>
             </Pressable>
           ))}
         </View>
-        <Text variant="footnote" tone="tertiary">
-          Session sizes are your own: the lower quarter, middle and upper quarter of your last 90
-          days (TRIMP per session).
-        </Text>
 
         <ProjectionChart history={points.slice(-28)} projection={outcome.projection} />
         <View style={styles.keys}>
@@ -133,10 +125,9 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
           <Pill glyph="!" label="Load rises more than 30% in two weeks" tone="warning" />
         ) : null}
         <Text variant="caption" tone="secondary">
-          To hold your current fitness: about {hold.toFixed(1)} typical sessions a week. To build it
-          about 10% in 4 weeks: about {build.toFixed(1)}.
+          To hold your fitness: about {hold.toFixed(1)} typical sessions a week. To build it 10% in
+          4 weeks: about {build.toFixed(1)}.
         </Text>
-        <SourceChips ids={outcome.evidence} />
       </View>
     </Card>
   );

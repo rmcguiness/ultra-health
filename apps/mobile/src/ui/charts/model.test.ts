@@ -2,8 +2,10 @@ import { addDays } from '@ultra-health/core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  ascendingX,
   dailyChart,
   dateTicks,
+  inTimeOrder,
   formatWindow,
   intradayChart,
   nearestIndex,
@@ -159,5 +161,87 @@ describe('long ranges', () => {
     const c = dailyChart(data, y, window, { cumulative: false, kalmanTrend: false });
     expect(c.connectReadings).toBe(false);
     expect(segments(c.points, c.gapThreshold).map((s) => s.gap)).toEqual([false, true]);
+  });
+});
+
+describe('lines never run backwards in time', () => {
+  const strictlyIncreasing = (xs: readonly number[]) =>
+    xs.every((x, i) => i === 0 || x > xs[i - 1]!);
+
+  it('orders and merges readings before they are joined', () => {
+    const merged = inTimeOrder([
+      { x: 3, value: 60, n: 1 },
+      { x: 1, value: 50, n: 1 },
+      { x: 3, value: 66, n: 2 },
+    ]);
+    expect(merged).toEqual([
+      { x: 1, value: 50, n: 1 },
+      { x: 3, value: 64, n: 3 },
+    ]);
+    expect(ascendingX([{ x: 2 }, { x: 1 }, { x: 2 }]).map((p) => p.x)).toEqual([1, 2]);
+    const already = [{ x: 1 }, { x: 2 }];
+    expect(ascendingX(already)).toBe(already);
+  });
+
+  it('holds for every range, including shuffled and duplicated input', () => {
+    const days: DailyInput[] = Array.from({ length: 800 }, (_, i) => ({
+      date: addDays(TODAY, -799 + i),
+      value: 50 + 10 * Math.sin(i / 9) + (i % 3),
+      n: 1,
+    }));
+    const shuffled = [...days].reverse().concat(days.slice(-5));
+    for (const id of ['W', 'M', '3M', '6M', 'Y', 'All'] as const) {
+      const range = rangeSpec(id);
+      const window = windowFor(range, 0, TODAY, days[0]!.date);
+      for (const cumulative of [false, true]) {
+        for (const kalmanTrend of [false, true]) {
+          const c = dailyChart(shuffled, range, window, { cumulative, kalmanTrend });
+          expect(strictlyIncreasing(c.points.map((p) => p.x))).toBe(true);
+          expect(strictlyIncreasing(c.trend.map((p) => p.x))).toBe(true);
+          for (const s of segments(c.points, c.gapThreshold))
+            expect(s.to.x).toBeGreaterThan(s.from.x);
+        }
+      }
+    }
+    const intraday = intradayChart(
+      [
+        { minute: 300, value: 60 },
+        { minute: 100, value: 55 },
+        { minute: 100, value: 57 },
+      ],
+      TODAY,
+    );
+    expect(intraday.points.map((p) => p.x)).toEqual([100, 300]);
+    expect(intraday.points[0]!.value).toBe(56);
+  });
+
+  it('centres the trend on the readings instead of lagging them', () => {
+    // A step up halfway through the month: the trend should cross the
+    // midpoint on the day of the step, not 3 days later.
+    const range = rangeSpec('M');
+    const window = windowFor(range, 0, TODAY, undefined);
+    const step = addDays(TODAY, -15);
+    const data: DailyInput[] = Array.from({ length: 70 }, (_, i) => {
+      const date = addDays(TODAY, -69 + i);
+      return { date, value: date < step ? 50 : 60, n: 1 };
+    });
+    const c = dailyChart(data, range, window, { cumulative: false, kalmanTrend: false });
+    const stepX = c.points.find((p) => p.value === 60)!.x;
+    const crossing = c.trend.find((p) => p.value >= 55)!.x;
+    expect(Math.abs(crossing - stepX)).toBeLessThanOrEqual(1);
+  });
+
+  it('uses readings after a past window so its last days are centred too', () => {
+    const range = rangeSpec('M');
+    const window = windowFor(range, 1, TODAY, undefined);
+    const data: DailyInput[] = Array.from({ length: 120 }, (_, i) => ({
+      date: addDays(TODAY, -119 + i),
+      value: addDays(TODAY, -119 + i) <= window.to ? 50 : 80,
+      n: 1,
+    }));
+    const c = dailyChart(data, range, window, { cumulative: false, kalmanTrend: false });
+    // The last day's 7-day window reaches 3 days past it, into the 80s.
+    expect(c.trend.at(-1)!.value).toBeGreaterThan(50);
+    expect(c.points.every((p) => p.value === 50)).toBe(true);
   });
 });

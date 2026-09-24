@@ -1,5 +1,7 @@
 import { Skia, type SkPath } from '@shopify/react-native-skia';
 
+import { ascendingX } from './model';
+
 export interface Pt {
   readonly x: number;
   readonly y: number;
@@ -8,14 +10,17 @@ export interface Pt {
 /**
  * A polyline split in two: solid between neighbouring days, and a separate
  * path for joins across missing days, drawn dashed and faint so a gap is
- * bridged without looking like a measurement.
+ * bridged without looking like a measurement. Straight segments between
+ * points in increasing x only, so a line can never fold back in time or
+ * overshoot the readings the way a fitted curve can.
  */
 export function linePaths(
-  points: readonly Pt[],
+  input: readonly Pt[],
   sx: (x: number) => number,
   sy: (y: number) => number,
   gap = 1,
 ): { solid: SkPath; dashed: SkPath } {
+  const points = ascendingX(input);
   const solid = Skia.Path.Make();
   const dashed = Skia.Path.Make();
   for (let i = 1; i < points.length; i++) {
