@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { gaussian } from '../testUtils';
 import { addDays } from '../time/dates';
 import {
+  fitTrendParams,
   fitWeightParams,
   forecastWeight,
   selectDailyWeighIns,
@@ -91,6 +92,22 @@ describe('weightTrend', () => {
     expect(fit.fitted).toBe(true);
     expect(fit.params.obsSd).toBeGreaterThanOrEqual(0.2);
     expect(fit.params.obsSd).toBeLessThanOrEqual(0.4);
+  });
+});
+
+describe('fitTrendParams', () => {
+  it('fits a series in another unit on a grid scaled to its noise', () => {
+    // Body fat as a fraction: the same shape as weight, 1/100 the size.
+    const fraction = synthetic(120, 0, 0.3, 6).map((w) => ({ ...w, kg: w.kg / 100 }));
+    const range = { from: FROM, to: addDays(FROM, 119) };
+    const fit = fitTrendParams(fraction, range, {
+      obsSd: 0.005,
+      levelSd: 0.0004,
+      slopeSd: 0.00002,
+    });
+    expect(fit.fitted).toBe(true);
+    expect(fit.params.obsSd).toBeGreaterThanOrEqual(0.002);
+    expect(fit.params.obsSd).toBeLessThanOrEqual(0.004);
   });
 });
 

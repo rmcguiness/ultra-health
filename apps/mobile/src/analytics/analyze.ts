@@ -13,6 +13,7 @@ import {
   fitnessFatigue,
   fitWeightParams,
   forecastWeight,
+  goalProgress,
   isMuscleStrengthening,
   loadRamp,
   maintenanceCheck,
@@ -25,6 +26,10 @@ import {
   sessionLoadProfile,
   sessionTarget,
   sleepRegularityIndex,
+  strengthSession,
+  isoWeekday,
+  isTrainingSession,
+  weekPlan,
   trainingBlocks,
   typicalSessionMinutes,
   valueOn,
@@ -44,6 +49,8 @@ import {
   type DenseSeries,
   type DetrainingOutlook,
   type FitnessFatiguePoint,
+  type Goal,
+  type GoalProgress,
   type HeartRateAnchors,
   type IllnessWatch,
   type LoadRamp,
@@ -55,6 +62,8 @@ import {
   type SessionKind,
   type SessionTarget,
   type SleepRegularity,
+  type StrengthSession,
+  type PlannedDay,
   type TodayPlan,
   type TrainingSession,
   type WeeklyInsight,
@@ -144,6 +153,7 @@ export function analyzeDay(
   load: readonly FitnessFatiguePoint[],
   date: LocalDate,
   watchers?: IllnessWatchers,
+  goal?: Goal,
 ): DailyAnalysis {
   const { series } = inputs;
   const hrv = chooseHrv(inputs, date);
@@ -191,6 +201,7 @@ export function analyzeDay(
       week: weekSoFar,
       sessions: inputs.sessions,
       fastRamp: ramp.fast,
+      goal,
     }),
     hrvZ7,
     rhrZ7,
@@ -235,10 +246,41 @@ export interface TodayGuide {
   readonly alternative: SessionTarget | undefined;
   /** A session of the recommended kind is already logged today. */
   readonly doneToday: boolean;
+  /** Strength days with a goal: today's named session (A or B). */
+  readonly strength: StrengthSession | undefined;
+  /** With a goal: this calendar week, Monday first, as planned and as done. */
+  readonly week: readonly WeekDay[] | undefined;
   /** Weekly targets over the 7 days ending today, so today's workout counts. */
   readonly steps: readonly WeeklyStep[];
   readonly anchors: HeartRateAnchors | undefined;
   readonly maxHrMethod: 'observed' | 'age_predicted' | undefined;
+}
+
+export interface WeekDay {
+  readonly date: LocalDate;
+  readonly planned: PlannedDay;
+  /** A strength or training session was logged that day. */
+  readonly trained: boolean;
+  /** Before the goal started, so not part of the plan yet. */
+  readonly beforeStart: boolean;
+}
+
+/** Monday to Sunday of the week containing `date`, from the goal's week plan. */
+function calendarWeek(
+  goal: Goal,
+  sessions: readonly TrainingSession[],
+  date: LocalDate,
+): WeekDay[] {
+  const plan = weekPlan(goal);
+  const monday = addDays(date, 1 - isoWeekday(date));
+  return enumerateDates(monday, addDays(monday, 6)).map((d) => ({
+    date: d,
+    planned: plan[isoWeekday(d)]!,
+    trained: sessions.some(
+      (s) => s.date === d && (isTrainingSession(s) || isMuscleStrengthening(s.activityType)),
+    ),
+    beforeStart: d < goal.startDate,
+  }));
 }
 
 export interface Outlook {
@@ -253,6 +295,8 @@ export interface Outlook {
   readonly composition: CompositionModel | undefined;
   /** Level 3: fat mass, lean mass and waist trends. */
   readonly body: BodyCompositionTrends;
+  /** The three-level ladder against the user's goal, when one is set. */
+  readonly progress: GoalProgress | undefined;
   readonly sleepRegularity: SleepRegularity | undefined;
   readonly whatWorked: WhatWorked;
   readonly detraining: DetrainingOutlook | undefined;
@@ -305,6 +349,7 @@ function todayGuide(
   day: DailyAnalysis,
   date: LocalDate,
   thisWeek: ActivityWeek,
+  goal: Goal | undefined,
 ): TodayGuide {
   const { series, sessions } = inputs;
   // Same resting-HR anchor as session loads: the median of the last 30 days.
@@ -313,12 +358,26 @@ function todayGuide(
     : undefined;
   const anchors =
     rest !== undefined && inputs.maxHr ? { restingHr: rest, maxHr: inputs.maxHr.value } : undefined;
-  const target = (kind: SessionKind) => sessionTarget(kind, { sessions, asOf: date, anchors });
+  const target = (kind: SessionKind) =>
+    sessionTarget(kind, { sessions, asOf: date, anchors, plannedMinutes: goal?.sessionMinutes });
   const alternative = day.plan.alternatives[0];
   return {
     primary: target(day.plan.primary),
     alternative: alternative === undefined ? undefined : target(alternative),
     doneToday: sessions.some((s) => s.date === date && matchesKind(day.plan.primary, s)),
+    strength:
+      goal && day.plan.primary === 'strength'
+        ? strengthSession({
+            equipment: goal.equipment,
+            experience: goal.experience,
+            sessionMinutes: goal.sessionMinutes,
+            // Sessions before today, so the day's session stays put once done.
+            doneSinceStart: sessions.filter(
+              (s) =>
+                s.date >= goal.startDate && s.date < date && isMuscleStrengthening(s.activityType),
+            ).length,
+          })
+        : undefined,
     steps: weeklySteps({
       week: thisWeek,
       sleepHours: series.sleepHours
@@ -326,15 +385,16 @@ function todayGuide(
         : [],
       typicalCardioMinutes: typicalSessionMinutes(sessions, date, ['endurance']),
     }),
+    week: goal ? calendarWeek(goal, sessions, date) : undefined,
     anchors,
     maxHrMethod: inputs.maxHr?.method,
   };
 }
 
 /** The full picture for `date`: today plus trends, forecasts and patterns. */
-export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
+export function outlook(inputs: AnalyticsInputs, date: LocalDate, goal?: Goal): Outlook {
   const load = loadSeries(inputs);
-  const day = analyzeDay(inputs, load, date);
+  const day = analyzeDay(inputs, load, date, undefined, goal);
   const { series } = inputs;
 
   const aerobic = aerobicTrend(
@@ -368,6 +428,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
   const { params } = fitWeightParams(inputs.weights, weightRange);
   const weight = weightTrend(inputs.weights, weightRange, params);
   const composition = weightComposition(inputs.weights, load, weightRange, params);
+  const body = bodyCompositionTrends({ ...inputs.body, range: weightRange });
 
   const blockInputs = {
     sessions: inputs.sessions,
@@ -400,7 +461,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
 
   return {
     day,
-    guide: todayGuide(inputs, day, date, thisWeek),
+    guide: todayGuide(inputs, day, date, thisWeek, goal),
     scorecard: scorecard({
       date,
       sessions: inputs.sessions,
@@ -417,7 +478,22 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     weight,
     weightForecast: weight ? forecastWeight(weight, 28) : [],
     composition,
-    body: bodyCompositionTrends({ ...inputs.body, range: weightRange }),
+    body,
+    progress: goal
+      ? goalProgress({
+          date,
+          goal,
+          readiness: day.readiness.status,
+          illness: day.illness.alert,
+          sleepHours: series.sleepHours
+            ? mean(valuesBetween(series.sleepHours, addDays(date, -6), date))
+            : undefined,
+          sessions: inputs.sessions,
+          aerobic: aerobic.verdict,
+          weight,
+          body,
+        })
+      : undefined,
     sleepRegularity,
     whatWorked: whatWorked(blocks, current),
     vo2Projection:

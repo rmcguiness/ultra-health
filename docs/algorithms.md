@@ -268,6 +268,32 @@ over T weeks has standard error σ·√(12/kT), so T = (1.645·σ·√(12/k)/|r|
    and enough protein (iraki2019, morton2018).
 8. Body improving or rate on pace → on track. Otherwise keep going.
 
+### The planned week and strength sessions
+
+`goals/week.ts`, `recommend/plan.ts` (with a goal), `recommend/targets.ts`.
+
+- **Week plan**: the user's training days split into strength and cardio by goal, the rest are
+  rest days. Strength days: build muscle up to 4 (each muscle ≥ 2×/week grew more than 1×,
+  schoenfeld2016); recomp up to 3; lose fat 2, or 3 from 5 days (lifting while dieting lost
+  less lean mass than cardio alone, villareal2017; cardio days add expenditure, donnelly2009);
+  fitness 1, or 2 from 4 days; health 2 (bull2020). Strength days are chosen to maximise the
+  smallest gap between them so the same muscles get 48 h when the days allow (garber2011).
+- **Today with a goal**: illness and "hold back" still come first. Then the planned day: rest
+  (offering a strength catch-up only for strength days planned since the goal started and
+  missed, once 48 h have passed); strength (swapped for moderate cardio within 48 h of lifting);
+  cardio, hard when recovered, under 75 vigorous minutes this week, 48 h after the last hard
+  session and not on a load ramp (vesterinen2016, stanley2013, helgerud2007), easy when
+  absorbing load, moderate otherwise. Session length is the time the user set aside.
+- **Strength session**: two full-body templates per setting (gym, dumbbells, bodyweight),
+  alternating A/B with each strength session done since the goal started; compound lifts first
+  (acsm2009); 3 exercises for 20 min, 4 for 30, 5 from 45. Sets and reps 2–3 × 8–12 for new or
+  returning lifters, 3–4 × 8–12 for consistent ones (garber2011, acsm2009); stop with 1–3 reps
+  left, since training to failure added no clear growth (refalo2023); add 2–10% load once the
+  last set beats the top of the range by 1–2 reps (acsm2009).
+- **Effort by feel** (the talk test, reed2014): comfortable speech is possible below the
+  ventilatory threshold and not above it. Easy: a full conversation; moderate: breathing harder
+  but still talking in sentences; hard: talking comfortably is no longer possible.
+
 ### Sleep Regularity Index
 
 SRI = −100 + 200 × P(same sleep/wake state at t and t + 24 h), on 1-minute epochs within
@@ -397,8 +423,10 @@ it, what they mean, how they are worked out and the papers (`features/about/cont
 no card carries method notes or source chips.
 
 - **Today**, top to bottom: banners only when something needs attention (illness watch,
-  detraining outlook, a > 30% load ramp); the plan with its concrete target, one-line reason,
-  recovery status and one alternative; the weekly checklist; the in-shape scorecard as tiles
+  detraining outlook, a > 30% load ramp); the plan with its concrete target (with a goal: the
+  named strength session and its exercises, a talk-test cue, and the week strip S/C/· with ✓
+  once trained), one-line reason, recovery status and one alternative; your progress (the three
+  levels and what they mean, or a prompt to set a goal); the weekly checklist; the in-shape scorecard as tiles
   (each opens its pillar); the 4-week VO₂max and weight forecasts; what worked, once it has a
   pattern (a one-line note before that).
 - **Trends**: a plain summary for the range grouped by clock (Recovery · days: HRV; Fitness ·
@@ -450,6 +478,12 @@ Checks and what they should show:
 - Illness watch: a few episodes a year, with reduced movement on alert days.
 - Each illness signal's trigger rate: ~2.5% of days.
 - Weight decomposition gate and the "what worked" block count.
+- Body composition: scale days with body fat, how many were mornings, and the fat and lean
+  trends' one-step error.
+- The goal ladder: a fat-loss goal (Mon/Wed/Fri) started 8 weeks before each fortnightly check,
+  with the share of each level's status and of each "what it means". On the developer's export
+  the weekly weight rate was unreadable at 64% of checks (bursts of weigh-ins with months
+  between), which is why check-in reminders come next.
 
 Findings so far on the developer's export shaped the rules above: personal illness limits
 replaced fixed thresholds and CUSUM, Apple Exercise minutes were added for absolute

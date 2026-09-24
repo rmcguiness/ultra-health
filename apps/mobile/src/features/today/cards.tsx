@@ -1,8 +1,16 @@
-import { formatMetricDelta, formatMetricValue, METRICS, type WeeklyStep } from '@ultra-health/core';
+import {
+  formatMetricDelta,
+  formatMetricValue,
+  METRICS,
+  type StrengthSession,
+  type WeeklyStep,
+  type WeightRateStatus,
+} from '@ultra-health/core';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import type { Outlook } from '@/analytics/analyze';
+import type { Outlook, WeekDay } from '@/analytics/analyze';
+import { WEEKDAY_SHORT } from '@/features/goal/copy';
 import { Banner, Chevron, StepRow, Tile } from '@/ui/components/Blocks';
 import { Card } from '@/ui/components/Card';
 import { CardHeader } from '@/ui/components/CardHeader';
@@ -82,9 +90,11 @@ export function Alerts({ outlook }: { outlook: O }) {
 export function PlanHero({ outlook }: { outlook: O }) {
   const router = useRouter();
   const { plan, readiness } = outlook.day;
-  const { primary, alternative, doneToday } = outlook.guide;
+  const { primary, alternative, doneToday, strength, week } = outlook.guide;
   const session = SESSION_COPY[plan.primary];
-  const target = targetSummary(primary);
+  const target = strength
+    ? `${primary.minutes !== undefined ? `About ${primary.minutes} min · ` : ''}${strength.sets.low}–${strength.sets.high} sets of ${strength.reps.low}–${strength.reps.high} reps each`
+    : targetSummary(primary);
   const intervals = intervalSummary(primary);
   const why = plan.reasons[0]?.summary;
   const r = readinessView(readiness);
@@ -97,8 +107,16 @@ export function PlanHero({ outlook }: { outlook: O }) {
         <CardHeader title="Your move today" topic="plan">
           {doneToday ? <Pill glyph="✓" label="Done" tone="positive" /> : null}
         </CardHeader>
-        <Text variant="title">{session.title}</Text>
+        <Text variant="title">
+          {strength ? `${session.title} · Full body ${strength.id}` : session.title}
+        </Text>
         <Text variant="body">{target ?? session.detail}</Text>
+        {primary.feel ? (
+          <Text variant="caption" tone="secondary">
+            {primary.feel}
+          </Text>
+        ) : null}
+        {strength ? <StrengthList session={strength} /> : null}
         {intervals ? (
           <Text variant="caption" tone="secondary">
             {intervals}
@@ -133,8 +151,82 @@ export function PlanHero({ outlook }: { outlook: O }) {
             Or: {alternativeSummary(alternative)}
           </Text>
         ) : null}
+        {week ? <WeekStrip week={week} today={plan.date} /> : null}
       </View>
     </Card>
+  );
+}
+
+/** Today's exercises in order, each with how to do it (or an easier version). */
+function StrengthList({ session }: { session: StrengthSession }) {
+  return (
+    <View style={styles.exercises}>
+      {session.exercises.map((e, i) => (
+        <View key={e.name} style={styles.exercise}>
+          <Text variant="caption" tone="tertiary" style={styles.exerciseN}>
+            {i + 1}
+          </Text>
+          <View style={styles.flex}>
+            <Text variant="body">{e.name}</Text>
+            <Text variant="caption" tone="tertiary">
+              {e.cue}
+            </Text>
+          </View>
+        </View>
+      ))}
+      <Text variant="caption" tone="secondary">
+        {session.effort} {session.progression}
+      </Text>
+    </View>
+  );
+}
+
+const PLANNED_LETTER: Readonly<Record<WeekDay['planned'], string>> = {
+  strength: 'S',
+  cardio: 'C',
+  rest: '·',
+};
+
+/** The week as planned: S strength, C cardio, · rest; ✓ once trained. */
+function WeekStrip({ week, today }: { week: readonly WeekDay[]; today: string }) {
+  return (
+    <View
+      style={styles.strip}
+      accessible
+      accessibilityLabel={`This week: ${week
+        .map(
+          (d, i) =>
+            `${WEEKDAY_SHORT[i]} ${d.planned}${d.trained ? ', done' : ''}${d.date === today ? ', today' : ''}`,
+        )
+        .join('; ')}`}
+    >
+      {week.map((d, i) => {
+        const isToday = d.date === today;
+        const past = d.date < today;
+        const missed = past && !d.beforeStart && d.planned !== 'rest' && !d.trained;
+        return (
+          <View key={d.date} style={[styles.stripDay, isToday && styles.stripToday]}>
+            <Text variant="footnote" tone={isToday ? 'primary' : 'tertiary'}>
+              {WEEKDAY_SHORT[i]!.slice(0, 1)}
+            </Text>
+            <Text
+              variant="caption"
+              tone={
+                d.trained
+                  ? 'positive'
+                  : missed
+                    ? 'warning'
+                    : d.planned === 'rest'
+                      ? 'tertiary'
+                      : 'secondary'
+              }
+            >
+              {d.trained ? '✓' : PLANNED_LETTER[d.planned]}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -157,8 +249,39 @@ function stepProgress(s: WeeklyStep): string {
   }
 }
 
-function stepHint(s: WeeklyStep, strengthToday: boolean): string {
+const WEEKDAY_LONG = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const;
+
+/** With a goal, the next day this week the plan has for strength or cardio. */
+function nextPlanned(
+  week: readonly WeekDay[] | undefined,
+  kind: 'strength' | 'cardio',
+  today: string,
+): string | undefined {
+  if (!week) return undefined;
+  const i = week.findIndex((d) => d.date >= today && d.planned === kind && !d.trained);
+  if (i < 0) return undefined;
+  return week[i]!.date === today ? 'today' : WEEKDAY_LONG[i];
+}
+
+function stepHint(
+  s: WeeklyStep,
+  strengthToday: boolean,
+  week: readonly WeekDay[] | undefined,
+  today: string,
+): string {
   if (s.done) return s.id === 'sleep' ? 'On track' : 'Done for this week';
+  if (s.id === 'strength' || s.id === 'cardio') {
+    const next = nextPlanned(week, s.id, today);
+    if (next) return `Next in your plan: ${next}`;
+  }
   switch (s.id) {
     case 'cardio': {
       const n = s.sessions?.count ?? 1;
@@ -193,7 +316,7 @@ export function WeekCard({ outlook }: { outlook: O }) {
             label={STEP_LABEL[s.id]}
             done={s.done}
             progress={stepProgress(s)}
-            hint={stepHint(s, strengthToday)}
+            hint={stepHint(s, strengthToday, outlook.guide.week, outlook.day.date)}
             value={s.value}
             target={s.target}
             max={s.target}
@@ -284,10 +407,15 @@ export function ForecastCard({ outlook }: { outlook: O }) {
   const hasWeight = w !== undefined && last !== undefined && f !== undefined && w.observedDays >= 7;
   const lb = (kg: number) => formatMetricValue(METRICS.body_mass, kg);
   const unit = METRICS.body_mass.display.unit;
+  const rate = outlook.progress?.weightRate;
+  const pace = rate?.band ? WEIGHT_PACE[rate.status] : undefined;
   return (
     <Card>
       <View style={styles.stack}>
-        <CardHeader title="In 4 weeks, if nothing changes" topic="forecast" />
+        <CardHeader
+          title={outlook.progress ? 'In 4 weeks, at this pace' : 'In 4 weeks, if nothing changes'}
+          topic="forecast"
+        />
         {v ? (
           <ForecastRow
             label="VO₂max"
@@ -310,7 +438,7 @@ export function ForecastCard({ outlook }: { outlook: O }) {
             label="Weight"
             value={`${lb(f.level)} ${unit}`}
             range={`${lb(f.levelLower)}–${lb(f.levelUpper)}`}
-            note={`now ${lb(last.level)} · ${last.slopePerDay >= 0 ? '+' : '−'}${formatMetricDelta(METRICS.body_mass, Math.abs(last.slopePerDay * 7))} ${unit} a week`}
+            note={`now ${lb(last.level)} · ${last.slopePerDay >= 0 ? '+' : '−'}${formatMetricDelta(METRICS.body_mass, Math.abs(last.slopePerDay * 7))} ${unit} a week${pace ? ` · ${pace}` : ''}`}
             onPress={() => router.push({ pathname: '/metric/[id]', params: { id: 'body_mass' } })}
           />
         ) : (
@@ -361,6 +489,18 @@ function ForecastRow({
     </Pressable>
   );
 }
+
+/** The weekly rate against the goal's band, in a few words. */
+const WEIGHT_PACE: Readonly<Record<WeightRateStatus, string | undefined>> = {
+  on_pace: 'on pace for your goal',
+  too_fast: 'faster than your goal',
+  too_slow: 'slower than your goal',
+  wrong_way: 'the wrong way for your goal',
+  steady: 'not moving yet',
+  rising: undefined,
+  falling: undefined,
+  unclear: undefined,
+};
 
 // ── What worked ───────────────────────────────────────────────────────────
 
@@ -433,4 +573,23 @@ const styles = StyleSheet.create({
   },
   forecastValue: { alignItems: 'flex-end' },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  exercises: { gap: spacing.sm, marginTop: spacing.xs },
+  exercise: { flexDirection: 'row', gap: spacing.sm },
+  exerciseN: { width: 14, marginTop: 2 },
+  strip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  stripDay: {
+    alignItems: 'center',
+    gap: 2,
+    width: 36,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+  },
+  stripToday: { backgroundColor: colors.surfaceRaised },
 });

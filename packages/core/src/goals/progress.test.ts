@@ -5,7 +5,7 @@ import { weightTrend, type DailyWeight } from '../body/weight';
 import { gaussian } from '../testUtils';
 import type { TrainingSession } from '../training/guidelines';
 import { addDays, isoWeekday } from '../time/dates';
-import { weightRateBand, type Goal } from './goal';
+import { parseGoal, weightRateBand, type Goal } from './goal';
 import {
   goalProgress,
   sessionAdherence,
@@ -241,3 +241,17 @@ function recomp(days: number, leanPerDay = 0.005) {
     range: { from: addDays(TODAY, -(days - 1)), to: TODAY },
   });
 }
+
+describe('parseGoal', () => {
+  it('reads back a stored goal and tidies its days', () => {
+    const stored = JSON.parse(JSON.stringify({ ...goal(), trainingDays: [5, 1, 3, 1] }));
+    expect(parseGoal(stored)).toEqual({ ...goal(), trainingDays: [1, 3, 5] });
+  });
+
+  it('rejects anything damaged or from another shape', () => {
+    expect(parseGoal(undefined)).toBeUndefined();
+    expect(parseGoal({ ...goal(), kind: 'bulk' })).toBeUndefined();
+    expect(parseGoal({ ...goal(), trainingDays: [0, 8] })).toBeUndefined();
+    expect(parseGoal({ ...goal(), startDate: 'yesterday' })).toBeUndefined();
+  });
+});

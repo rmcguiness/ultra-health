@@ -85,6 +85,11 @@ export class ExportHealthSource implements HealthDataSource {
     return this.data.profile;
   }
 
+  /** An export is a record of the past; nothing is written back to it. */
+  async saveMeasurement(): Promise<void> {
+    throw new Error('The Health export is read-only.');
+  }
+
   private dailyValues(metric: MetricDefinition): Map<LocalDate, number> {
     const cached = this.daily.get(metric.id);
     if (cached) return cached;

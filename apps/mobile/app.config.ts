@@ -3,7 +3,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 /**
  * `APP_VARIANT=development` produces a separately installable dev build
  * (own bundle id and name) that can also *write* synthetic HealthKit data
- * to the iOS Simulator. Production builds request read access only.
+ * to the iOS Simulator. Production builds write only what the user types
+ * in: weight and waist (the measurement sheet), asked for on first save.
  */
 const IS_DEV = process.env.APP_VARIANT === 'development';
 
@@ -59,8 +60,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         NSHealthShareUsageDescription: HEALTH_SHARE_USAGE,
         NSHealthUpdateUsageDescription: IS_DEV
-          ? 'Development builds write synthetic sample data to the iOS Simulator only.'
-          : false,
+          ? 'Development builds write synthetic sample data to the iOS Simulator, and save the ' +
+            'weight and waist measurements you enter to Apple Health.'
+          : 'Ultra Health saves the weight and waist measurements you enter to Apple Health, ' +
+            'so the Health app and your other apps see the same numbers.',
         // Background delivery lands with the background-sync milestone.
         background: false,
       },

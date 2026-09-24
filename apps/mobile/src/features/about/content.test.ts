@@ -49,6 +49,24 @@ describe('aboutContent', () => {
     expect(c.evidence).toContain('tanaka2001');
   });
 
+  it('explains progress against a goal, from the same analysis', () => {
+    const withGoal = outlook(inputs, TO, {
+      kind: 'lose_fat',
+      experience: 'new',
+      trainingDays: [1, 3, 5],
+      sessionMinutes: 45,
+      equipment: 'gym',
+      pace: 'steady',
+      startDate: addDays(TO, -35),
+    });
+    expect(o.progress).toBeUndefined();
+    const c = aboutContent('progress', withGoal)!;
+    expect(c.facts[0]).toMatchObject({ label: 'Goal', value: expect.stringMatching(/^Lose fat/) });
+    expect(c.meaning).toEqual([withGoal.progress!.next.text]);
+    // The synthetic weight falls ~0.13%/week: slower than the goal's band.
+    expect(withGoal.progress!.weightRate?.status).toBe('too_slow');
+  });
+
   it('needs the analysis only for personal topics', () => {
     expect(aboutContent('timeline', undefined)).toBeDefined();
     expect(aboutContent('plan', undefined)).toBeUndefined();

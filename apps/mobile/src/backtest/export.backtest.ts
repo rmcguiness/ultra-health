@@ -430,6 +430,34 @@ describe.skipIf(!existsSync(EXPORT))('back-test on the Apple Health export', () 
       `Maintenance minimum met (2 qualifying aerobic sessions): ${pct(weeks.filter((d) => d.maintenance.endurance).length, weeks.length)} of weeks`,
     );
 
+    // The goal ladder on history: a fat-loss goal (Mon/Wed/Fri, steady pace)
+    // started 8 weeks before each fortnightly check. Shares only.
+    const checks = enumerateDates(start, range.to).filter((_, i) => i % 14 === 0);
+    const shares = (xs: readonly string[]) =>
+      [...new Set(xs)]
+        .map((k) => [k, xs.filter((x) => x === k).length] as const)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k} ${pct(n, xs.length)}`)
+        .join(', ');
+    const ladder = checks.map(
+      (d) =>
+        outlook(inputs, d, {
+          kind: 'lose_fat',
+          experience: 'returning',
+          trainingDays: [1, 3, 5],
+          sessionMinutes: 45,
+          equipment: 'gym',
+          pace: 'steady',
+          startDate: addDays(d, -56),
+        }).progress!,
+    );
+    say(`Goal ladder (lose fat, Mon/Wed/Fri, 8 weeks in) at ${checks.length} fortnightly checks:`);
+    say(`  recovery: ${shares(ladder.map((p) => p.recovery.status))}`);
+    say(`  response: ${shares(ladder.map((p) => p.response.status))}`);
+    say(`  weight rate: ${shares(ladder.map((p) => p.weightRate?.status ?? 'no weigh-ins'))}`);
+    say(`  body: ${shares(ladder.map((p) => p.body.status))}`);
+    say(`  what it means: ${shares(ladder.map((p) => p.next.id))}`);
+
     // The outlook as of the last day of the export.
     const o = outlook(inputs, range.to);
     say('');

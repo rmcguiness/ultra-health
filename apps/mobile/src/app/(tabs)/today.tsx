@@ -1,6 +1,7 @@
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { useOutlook } from '@/features/analytics';
+import { ProgressCard, SetGoalCard } from '@/features/goal/ProgressCard';
 import { today } from '@/features/queries';
 import {
   Alerts,
@@ -21,8 +22,9 @@ import { colors, spacing } from '@/ui/theme';
 
 /**
  * The morning view, top to bottom: anything that needs attention, what to do
- * today and why, what is left this week, where you stand and where you are
- * heading. Each card's ⓘ holds the reasoning and the papers.
+ * today and why, whether your goal is on track, what is left this week, where
+ * you stand and where you are heading. Each card's ⓘ holds the reasoning and
+ * the papers.
  */
 export default function Today() {
   const { status, sync } = useSyncStore();
@@ -47,6 +49,7 @@ export default function Today() {
         <>
           <Alerts outlook={outlook} />
           <PlanHero outlook={outlook} />
+          {outlook.progress ? <ProgressCard progress={outlook.progress} /> : <SetGoalCard />}
           <WeekCard outlook={outlook} />
           <ScorecardCard outlook={outlook} />
           <ForecastCard outlook={outlook} />

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useGoalStore } from '@/features/goal/store';
 import { logger } from '@/logger';
 import { ALL_METRICS, getServices } from '@/services';
 import { useSyncStore } from '@/sync/store';
@@ -33,7 +34,8 @@ export default function Connect() {
       await health.requestReadAuthorization(await health.supportedMetrics(ALL_METRICS));
       await queryClient.invalidateQueries({ queryKey: ['health-access'] });
       void sync();
-      router.replace('/today');
+      const { goal, skipped } = useGoalStore.getState();
+      router.replace(goal || skipped ? '/today' : '/onboarding');
     } catch (e) {
       logger.error('connect.failed', { message: String(e) });
       setError(e instanceof Error ? e.message : String(e));

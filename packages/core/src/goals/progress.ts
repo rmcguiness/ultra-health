@@ -218,8 +218,11 @@ export function weightRate(
   return { perWeekPct, lowerPct, upperPct, band, status };
 }
 
-/** A measured rate: one decimal is all the precision it has. */
-const pct = (v: number) => `${Math.abs(v).toFixed(1)}%`;
+/**
+ * A measured rate: one decimal, or two below 1% so a rate just under a
+ * bound (0.46%) never reads as the bound itself (0.5%).
+ */
+const pct = (v: number) => `${Math.abs(v).toFixed(Math.abs(v) < 1 ? 2 : 1)}%`;
 /** A published bound, as written (0.25%, 0.5%, 1%). */
 const bound = (v: number) => `${Number(Math.abs(v).toFixed(2))}%`;
 

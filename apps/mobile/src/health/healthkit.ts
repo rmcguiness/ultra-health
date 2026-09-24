@@ -1,7 +1,9 @@
 import {
   AuthorizationRequestStatus,
+  AuthorizationStatus,
   BiologicalSex,
   areObjectTypesAvailableAsync,
+  authorizationStatusFor,
   getBiologicalSexAsync,
   getDateOfBirthAsync,
   getRequestStatusForAuthorization,
@@ -12,8 +14,10 @@ import {
   queryStatisticsCollectionForQuantity,
   queryWorkoutSamplesWithAnchor,
   requestAuthorization,
+  saveQuantitySample,
   type ObjectTypeIdentifier,
   type QuantityTypeIdentifier,
+  type QuantityTypeIdentifierWriteable,
   type WorkoutProxyTyped,
 } from '@kingstinct/react-native-healthkit';
 import {
@@ -28,15 +32,17 @@ import type { AnyMap } from 'react-native-nitro-modules';
 
 import { logger } from '@/logger';
 
-import type {
-  AnchoredPage,
-  DailyStatisticRecord,
-  HealthDataSource,
-  HealthProfile,
-  QuantitySampleRecord,
-  RetainedMetadata,
-  SleepSegmentRecord,
-  WorkoutRecord,
+import {
+  WRITABLE_METRICS,
+  WriteDeniedError,
+  type AnchoredPage,
+  type DailyStatisticRecord,
+  type HealthDataSource,
+  type HealthProfile,
+  type QuantitySampleRecord,
+  type RetainedMetadata,
+  type SleepSegmentRecord,
+  type WorkoutRecord,
 } from './types';
 
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis';
@@ -45,6 +51,11 @@ const BIRTH_DATE_TYPE = 'HKCharacteristicTypeIdentifierDateOfBirth';
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier';
 const HEART_RATE_TYPE = 'HKQuantityTypeIdentifierHeartRate';
 const ACTIVE_ENERGY_TYPE = 'HKQuantityTypeIdentifierActiveEnergyBurned';
+/** Share access is asked for these two only, and only on the first save. */
+const WRITE_TYPES = [
+  'HKQuantityTypeIdentifierBodyMass',
+  'HKQuantityTypeIdentifierWaistCircumference',
+] as const satisfies readonly QuantityTypeIdentifierWriteable[];
 
 /**
  * Metadata keys worth keeping, all scalars. Third-party writers can attach
@@ -257,6 +268,21 @@ export function createHealthKitSource(): HealthDataSource {
         sex:
           sex === BiologicalSex.male ? 'male' : sex === BiologicalSex.female ? 'female' : undefined,
       };
+    },
+
+    async saveMeasurement(metric, value, at) {
+      const writable: readonly string[] = WRITABLE_METRICS;
+      if (!writable.includes(metric.id)) throw new Error(`${metric.id} is read-only`);
+      const identifier = metric.healthKit.identifier as (typeof WRITE_TYPES)[number];
+      if (authorizationStatusFor(identifier) === AuthorizationStatus.notDetermined) {
+        await requestAuthorization({ toShare: [...WRITE_TYPES], toRead: [] });
+      }
+      if (authorizationStatusFor(identifier) !== AuthorizationStatus.sharingAuthorized) {
+        throw new WriteDeniedError();
+      }
+      await saveQuantitySample(identifier, metric.healthKit.unit as never, value, at, at, {
+        HKWasUserEntered: true,
+      });
     },
 
     async earliestSampleMs(metric) {

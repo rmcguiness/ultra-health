@@ -32,3 +32,4 @@ export * from './training/planner';
 export * from './training/ramp';
 export * from './goals/goal';
 export * from './goals/progress';
+export * from './goals/week';

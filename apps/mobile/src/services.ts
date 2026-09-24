@@ -3,6 +3,7 @@ import { METRIC_IDS, METRICS } from '@ultra-health/core';
 import type { LocalDate } from '@ultra-health/core';
 
 import { destroyDatabase, getDatabase, type Database } from '@/db/client';
+import { useGoalStore } from '@/features/goal/store';
 import { openSnapshot } from '@/dev/snapshot';
 import { createHealthKitSource } from '@/health/healthkit';
 import type { HealthDataSource } from '@/health/types';
@@ -44,8 +45,9 @@ export async function getHealthAccess(): Promise<HealthAccess> {
   return (await health.hasRequestedAuthorization(metrics)) ? 'ready' : 'needs_authorization';
 }
 
-/** Deletes every locally stored record and the encryption key's database. */
+/** Deletes every locally stored record, the encrypted database and the goal. */
 export async function eraseLocalData(): Promise<void> {
   services = undefined;
   await destroyDatabase();
+  await useGoalStore.getState().clear();
 }

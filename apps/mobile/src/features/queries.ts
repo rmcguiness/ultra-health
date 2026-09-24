@@ -126,6 +126,9 @@ export function useRecentWorkouts(limit: number) {
   });
 }
 
+/** History behind a body-measurement trend line, however short the window. */
+const BODY_TREND_HISTORY_DAYS = 365;
+
 /** Whole-number metrics get whole-number ticks. */
 export function integersFor(metric: MetricDefinition): boolean {
   return metric.display.decimals === 0;
@@ -180,17 +183,24 @@ export function useMetricChart(
         };
       }
 
+      const trendParams = bodyTrendParams(metric.id);
       const series = await getDailySeries(
         db,
         metric,
         {
-          from: addDays(window.from, -leadInDays(range)),
+          // Body trends learn their noise from a year of readings, as the
+          // analysis does, so the chart and Today draw the same trend.
+          from: addDays(
+            window.from,
+            -(trendParams
+              ? Math.max(leadInDays(range), BODY_TREND_HISTORY_DAYS)
+              : leadInDays(range)),
+          ),
           // The centred trend reads a few days past the window when they exist.
           to: minDate(addDays(window.to, leadOutDays(range)), to),
         },
         sourceKind,
       );
-      const trendParams = bodyTrendParams(metric.id);
       const model = dailyChart(series.points, range, window, {
         cumulative: metric.dailyAggregation === 'sum',
         kalmanTrend: trendParams !== undefined,

@@ -5,9 +5,18 @@ import { useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { seedSimulatorHealthData } from '@/dev/seedSimulator';
+import {
+  EQUIPMENT_COPY,
+  EXPERIENCE_COPY,
+  GOAL_SHORT,
+  PACE_COPY,
+  WEEKDAY_SHORT,
+} from '@/features/goal/copy';
+import { useGoalStore } from '@/features/goal/store';
 import { today, useHealthProfile } from '@/features/queries';
 import { eraseLocalData } from '@/services';
 import { useSyncStore } from '@/sync/store';
+import { formatDay } from '@/ui/charts/model';
 import { Button } from '@/ui/components/Button';
 import { Card } from '@/ui/components/Card';
 import { Screen } from '@/ui/components/Screen';
@@ -19,6 +28,7 @@ export default function Settings() {
   const { sync, status, bumpDataVersion } = useSyncStore();
   const [seeding, setSeeding] = useState(false);
   const { data: profile } = useHealthProfile();
+  const goal = useGoalStore((s) => s.goal);
   const age = profile?.birthDate
     ? Math.floor(daysBetween(profile.birthDate, today()) / 365.2425)
     : undefined;
@@ -56,6 +66,43 @@ export default function Settings() {
 
   return (
     <Screen title="Settings">
+      <Card>
+        <View style={styles.block}>
+          <Text variant="headline">Your goal</Text>
+          {goal ? (
+            <>
+              <Text variant="body">
+                {GOAL_SHORT[goal.kind]} · since {formatDay(goal.startDate, today())}
+              </Text>
+              <Text variant="caption" tone="secondary">
+                {goal.trainingDays.map((d) => WEEKDAY_SHORT[d - 1]).join(', ')} ·{' '}
+                {goal.sessionMinutes} min · {EQUIPMENT_COPY[goal.equipment].title.toLowerCase()} ·{' '}
+                {EXPERIENCE_COPY[goal.experience].title.toLowerCase()}
+                {goal.kind === 'lose_fat' ? ` · ${PACE_COPY[goal.pace].title.toLowerCase()}` : ''}
+              </Text>
+            </>
+          ) : (
+            <Text variant="caption" tone="secondary">
+              No goal yet. Set one to get a plan for your week and to see whether it’s working.
+            </Text>
+          )}
+          <Button
+            label={goal ? 'Change goal or schedule' : 'Set a goal'}
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/onboarding', params: { edit: '1' } })}
+          />
+          <Button
+            label="Log weight or waist"
+            variant="secondary"
+            onPress={() => router.push('/measure')}
+          />
+          <Text variant="caption" tone="tertiary">
+            Measurements go to Apple Health. The goal and schedule stay in this iPhone’s Keychain
+            and never leave it.
+          </Text>
+        </View>
+      </Card>
+
       <Card>
         <View style={styles.block}>
           <Text variant="headline">Sync</Text>

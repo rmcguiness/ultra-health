@@ -24,6 +24,42 @@ export interface Goal {
   readonly startDate: LocalDate;
 }
 
+const KINDS: readonly GoalKind[] = ['lose_fat', 'build_muscle', 'recomp', 'fitness', 'health'];
+const EXPERIENCE: readonly Experience[] = ['new', 'returning', 'consistent'];
+const EQUIPMENT: readonly Equipment[] = ['gym', 'dumbbells', 'bodyweight'];
+const PACES: readonly FatLossPace[] = ['gentle', 'steady', 'faster'];
+
+/**
+ * A goal read back from storage, or undefined when it is missing, from an
+ * older shape, or damaged. The app then asks again instead of guessing.
+ */
+export function parseGoal(value: unknown): Goal | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const v = value as Record<string, unknown>;
+  const days = Array.isArray(v.trainingDays) ? v.trainingDays : undefined;
+  const valid =
+    KINDS.includes(v.kind as GoalKind) &&
+    EXPERIENCE.includes(v.experience as Experience) &&
+    EQUIPMENT.includes(v.equipment as Equipment) &&
+    PACES.includes(v.pace as FatLossPace) &&
+    typeof v.sessionMinutes === 'number' &&
+    v.sessionMinutes > 0 &&
+    typeof v.startDate === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(v.startDate) &&
+    days !== undefined &&
+    days.every((d) => Number.isInteger(d) && (d as number) >= 1 && (d as number) <= 7);
+  if (!valid) return undefined;
+  return {
+    kind: v.kind as GoalKind,
+    experience: v.experience as Experience,
+    trainingDays: [...new Set(days as number[])].sort((a, b) => a - b),
+    sessionMinutes: v.sessionMinutes as number,
+    equipment: v.equipment as Equipment,
+    pace: v.pace as FatLossPace,
+    startDate: v.startDate as LocalDate,
+  };
+}
+
 export function isBodyGoal(kind: GoalKind): boolean {
   return kind === 'lose_fat' || kind === 'build_muscle' || kind === 'recomp';
 }

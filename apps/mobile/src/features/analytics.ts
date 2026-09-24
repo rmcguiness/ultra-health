@@ -9,6 +9,7 @@ import {
   type Outlook,
 } from '@/analytics/analyze';
 import { loadAnalyticsInputs, type AnalyticsInputs } from '@/analytics/inputs';
+import { useGoalStore } from '@/features/goal/store';
 import { logger } from '@/logger';
 import { getServices } from '@/services';
 import { useSyncStore } from '@/sync/store';
@@ -47,14 +48,15 @@ export function useAnalyticsInputs() {
   });
 }
 
-/** Today's full analysis. */
+/** Today's full analysis, against the goal when one is set. */
 export function useOutlook() {
   const { data: inputs, error } = useAnalyticsInputs();
   const version = useSyncStore((s) => s.dataVersion);
+  const goal = useGoalStore((s) => s.goal);
   const date = today();
   const query = useQuery({
-    queryKey: ['outlook', date, version, inputs !== undefined],
-    queryFn: (): Outlook => outlook(inputs!, date),
+    queryKey: ['outlook', date, version, inputs !== undefined, goal],
+    queryFn: (): Outlook => outlook(inputs!, date, goal),
     enabled: inputs !== undefined,
     placeholderData: keepPreviousData,
   });

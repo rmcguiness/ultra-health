@@ -102,4 +102,24 @@ export interface HealthDataSource {
   /** Oldest sample timestamp for a metric, used to bound historical backfill. */
   earliestSampleMs(metric: MetricDefinition): Promise<number | undefined>;
   readProfile(): Promise<HealthProfile>;
+  /**
+   * Saves a measurement the user typed in (weight or waist, in the catalog's
+   * storage unit), flagged as user-entered. Asks for write access to those two
+   * types the first time. The next sync reads it back like any other sample,
+   * so the sync engine stays the only database writer.
+   */
+  saveMeasurement(metric: MetricDefinition, value: number, at: Date): Promise<void>;
+}
+
+/** The only types Ultra Health writes: what the user types into the measurement sheet. */
+export const WRITABLE_METRICS = ['body_mass', 'waist_circumference'] as const;
+
+/** Write access to Weight or Waist was turned off in Settings. */
+export class WriteDeniedError extends Error {
+  constructor() {
+    super(
+      'Ultra Health can’t save to Apple Health. Turn on Weight and Waist Circumference in Settings › Health › Data Access & Devices › Ultra Health.',
+    );
+    this.name = 'WriteDeniedError';
+  }
 }

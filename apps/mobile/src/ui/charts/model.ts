@@ -6,6 +6,8 @@ import {
   toDense,
   valuesBetween,
   weightTrend,
+  DEFAULT_WEIGHT_PARAMS,
+  fitTrendParams,
   type LocalDate,
   type WeightModelParams,
 } from '@ultra-health/core';
@@ -395,14 +397,14 @@ export function dailyChart(
       .map((p) => ({ date: p.date, kg: p.value, standardized: true }));
     const first = weights[0]?.date;
     const last = weights.at(-1)?.date;
-    const t =
-      first && last
-        ? weightTrend(
-            weights,
-            { from: first, to: last > window.to ? last : window.to },
-            options.trendParams,
-          )
-        : undefined;
+    const span =
+      first && last ? { from: first, to: last > window.to ? last : window.to } : undefined;
+    // Learn the noise from the readings themselves once there are enough, as
+    // the analysis does, so the line follows this person's scale.
+    const params = span
+      ? fitTrendParams(weights, span, options.trendParams ?? DEFAULT_WEIGHT_PARAMS).params
+      : undefined;
+    const t = span ? weightTrend(weights, span, params) : undefined;
     trend = (t?.smoothed ?? [])
       .filter((p) => p.date >= window.from && p.date <= window.to)
       .map((p) => ({ x: daysBetween(window.from, p.date), value: p.level }));

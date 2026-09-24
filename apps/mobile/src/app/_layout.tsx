@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useGoalStore } from '@/features/goal/store';
 import { logger } from '@/logger';
 import { eraseLocalData, getServices } from '@/services';
 import { Button } from '@/ui/components/Button';
@@ -22,12 +23,15 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Holds rendering until the encrypted database is open and migrated. */
+/**
+ * Holds rendering until the encrypted database is open and migrated, and the
+ * goal is read from the Keychain, so any route (deep links included) sees both.
+ */
 function DatabaseGate({ children }: PropsWithChildren) {
   const { status, error, refetch } = useQuery({
     queryKey: ['database'],
     queryFn: async () => {
-      await getServices();
+      await Promise.all([getServices(), useGoalStore.getState().load()]);
       return true;
     },
   });
@@ -72,6 +76,15 @@ export default function RootLayout() {
             >
               <Stack.Screen name="index" />
               <Stack.Screen name="connect" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+              <Stack.Screen
+                name="measure"
+                options={{
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [0.75, 1],
+                  sheetGrabberVisible: true,
+                }}
+              />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="about/[topic]"

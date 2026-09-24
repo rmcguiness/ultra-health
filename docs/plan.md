@@ -63,27 +63,27 @@ steep.
       (fat loss 0.5–1%/week, garthe2011 + helms2014), protein guide (morton2018,
       longland2016), and `goalProgress`: the three levels, a "readable in ~N weeks" estimate
       from the user's own measurement noise, and the diagnosis tree. Unit-tested.
-- [ ] **B2 Profile store.** Keychain-backed goal/profile record with a React hook; cleared by
+- [x] **B2 Profile store.** Keychain-backed goal/profile record with a React hook; cleared by
       "Delete local data".
-- [ ] **B3 Log a measurement.** Weight and waist entry sheet that writes to HealthKit and
+- [x] **B3 Log a measurement.** Weight and waist entry sheet that writes to HealthKit and
       syncs. Production usage string for write access. Disabled in simulator snapshot mode.
-- [ ] **B4 Onboarding.** After the Health permission: goal → experience → training days and
+- [x] **B4 Onboarding.** After the Health permission: goal → experience → training days and
       equipment → starting measurements (optional) → pace (body goals) → what to expect.
       Editable later from Settings.
-- [ ] **B5 Today: your progress.** Three-level card under the plan; the 4-week forecast reads
+- [x] **B5 Today: your progress.** Three-level card under the plan; the 4-week forecast reads
       against the goal (on pace / behind / too fast).
-- [ ] **B6 Settings: goal and plan** section, measurement entry, redo onboarding.
+- [x] **B6 Settings: goal and plan** section, measurement entry, redo onboarding.
 
 ## Phase C · A planned week instead of a daily guess
 
-- [ ] **C1 Goal- and schedule-aware plan.** `planToday` takes the goal and the user's training
+- [x] **C1 Goal- and schedule-aware plan.** `planToday` takes the goal and the user's training
       days: non-training days become planned rest (a walk), muscle goals rank strength above
       hard cardio, fat-loss goals keep strength first to protect lean mass (villareal2017).
-- [ ] **C2 Named strength sessions.** Full-body A/B templates by equipment (gym, dumbbells,
+- [x] **C2 Named strength sessions.** Full-body A/B templates by equipment (gym, dumbbells,
       bodyweight), alternating; progression rule (acsm2009: add 2–10% when you beat the rep
       target by 1–2) and effort (stop 1–3 reps short of failure, refalo2023).
-- [ ] **C3 Week strip on Today.** Mon–Sun with planned session and done state.
-- [ ] **C4 Effort by feel.** Talk-test cue (reed2014) next to every bpm range.
+- [x] **C3 Week strip on Today.** Mon–Sun with planned session and done state.
+- [x] **C4 Effort by feel.** Talk-test cue (reed2014) next to every bpm range.
 
 ## Phase D · Guidance over time (next)
 
@@ -132,3 +132,14 @@ backtest`, then `SIM_DEVICE=<udid> pnpm --filter @ultra-health/mobile sim:snapsh
   split passes its gate on this export.
 - 2026-09-24: A2, A3 done. Back-test: 79 scale days with body fat, 51 mornings (trends use
   mornings only).
+- 2026-09-24: B1–B6 and C1–C4 done. Checked on the simulator with the real export: onboarding
+  (lose fat, Mon/Wed/Fri) → Today shows the planned rest day, the week strip and the ladder.
+  Fixed from that pass: days before the goal start counted as missed, and a rate just under a
+  bound displayed as the bound. The debug simulator build can't load Skia (RNSkiaModule not
+  registered); use a Release simulator build (`npx expo run:ios --configuration Release
+--device <udid> --no-bundler`, ignore its final dev-client "openurl" error).
+- 2026-09-24: goal ladder added to the back-test. On the real export (47 fortnightly checks, a
+  hypothetical Mon/Wed/Fri fat-loss goal): weight rate unreadable 64% (bursty weigh-ins), what
+  it means: keep going 28%, adherence 23%, recovery first 21%, food lever 13%, on track 9%,
+  protect muscle 6%. D2 (check-in reminders) is the highest-value next step. Chart body
+  trends now load a year of history and refit their noise, so they match Today and Trends.

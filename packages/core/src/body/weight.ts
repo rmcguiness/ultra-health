@@ -265,6 +265,32 @@ export function fitWeightParams(
   return { params: best.params, fitted: true };
 }
 
+/**
+ * `fitWeightParams` for a series in another unit (body fat as a fraction,
+ * lean mass, waist in cm): the weight grid scaled by the ratio of reading
+ * noise, so the search spans the same relative range around `defaults`.
+ */
+export function fitTrendParams(
+  readings: readonly DailyWeight[],
+  range: { readonly from: LocalDate; readonly to: LocalDate },
+  defaults: WeightModelParams,
+  minObservations = 40,
+): { params: WeightModelParams; fitted: boolean } {
+  const k = defaults.obsSd / DEFAULT_WEIGHT_PARAMS.obsSd;
+  const scale = (xs: readonly number[]) => xs.map((x) => x * k);
+  return fitWeightParams(
+    readings,
+    range,
+    minObservations,
+    {
+      obsSd: scale(WEIGHT_PARAM_GRID.obsSd),
+      levelSd: scale(WEIGHT_PARAM_GRID.levelSd),
+      slopeSd: scale(WEIGHT_PARAM_GRID.slopeSd),
+    },
+    defaults,
+  );
+}
+
 // ── Decomposition into tissue and training-driven water ────────────────────
 
 export interface LoadState {

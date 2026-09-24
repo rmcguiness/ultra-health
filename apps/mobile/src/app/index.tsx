@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { useGoalStore } from '@/features/goal/store';
 import { getHealthAccess } from '@/services';
 import { Text } from '@/ui/components/Text';
 import { colors, spacing } from '@/ui/theme';
@@ -11,6 +12,7 @@ export default function Index() {
     queryKey: ['health-access'],
     queryFn: getHealthAccess,
   });
+  const onboarded = useGoalStore((s) => s.goal !== undefined || s.skipped);
 
   if (error) {
     return (
@@ -31,7 +33,8 @@ export default function Index() {
       </View>
     );
   }
-  return <Redirect href={access === 'ready' ? '/today' : '/connect'} />;
+  if (access !== 'ready') return <Redirect href="/connect" />;
+  return <Redirect href={onboarded ? '/today' : '/onboarding'} />;
 }
 
 const styles = StyleSheet.create({

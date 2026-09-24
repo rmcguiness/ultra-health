@@ -23,12 +23,14 @@ import {
   WHAT_WORKED_COPY,
   type ToneName,
 } from '@/features/today/copy';
+import { GOAL_SHORT } from '@/features/goal/copy';
 
 // What each card's info button explains: the data behind the card, what it
 // means, how it is worked out, and the papers. Cards stay short because this
 // sheet carries the reasoning. Pure, so it is unit-tested in Node.
 
 export const TOPICS = [
+  'progress',
   'plan',
   'recovery',
   'week',
@@ -343,6 +345,65 @@ function forecastContent(o: Outlook): AboutContent {
   };
 }
 
+const LADDER_METHOD = [
+  'Your body answers on three clocks, so each level is read only when it can have changed. Recovery (days): HRV and resting heart rate against your normal range, and sleep. Response (weeks): training days done against the days you planned, over the last 2 weeks, and for body goals your weekly weight change. Body (months): fat mass, lean mass, waist and weight since you set the goal.',
+  'A body change counts as real only when it is bigger than your own measurement noise (the 90% range of the trend at both ends). Until then the card says when it should become readable, from your pace and how often you measure.',
+  'What it means comes from the first level that is off: recovery before training, showing up before results, then food once training is on plan. Losing 0.5–1% of body weight a week keeps muscle; building muscle, 0.25–0.5%. Exercise alone brings only modest weight loss, which is why food becomes the lever when training is on plan but weight doesn’t move.',
+];
+
+function progressContent(o: Outlook): AboutContent {
+  const p = o.progress;
+  if (!p) {
+    return {
+      title: 'Your progress',
+      facts: [],
+      meaning: [
+        'Set a goal to see it: lose fat, build muscle, both, get fitter or stay healthy. The goal decides what the plan asks of you and what progress means.',
+      ],
+      method: LADDER_METHOD,
+      evidence: ['helms2014', 'garthe2011', 'iraki2019', 'morton2018', 'donnelly2009'],
+    };
+  }
+  const facts: Fact[] = [
+    { label: 'Goal', value: `${GOAL_SHORT[p.goal.kind]}, since ${p.goal.startDate}` },
+    {
+      label: 'Training days, last 2 weeks',
+      value:
+        p.sessions.planned > 0 ? `${p.sessions.done} of ${p.sessions.planned}` : 'none planned yet',
+    },
+  ];
+  const r = p.weightRate;
+  if (r && r.status !== 'unclear') {
+    const f = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}%`;
+    facts.push({
+      label: 'Weight change a week',
+      value: `${f(r.perWeekPct)} (${f(r.lowerPct)} to ${f(r.upperPct)})`,
+    });
+    if (r.band) {
+      facts.push({ label: 'Aim', value: `${f(r.band.low)} to ${f(r.band.high)} a week` });
+    }
+  }
+  if (p.readableInWeeks !== undefined) {
+    facts.push({ label: 'Body change readable in', value: `about ${p.readableInWeeks} weeks` });
+  }
+  if (p.protein) {
+    facts.push({ label: 'Protein', value: `${p.protein.lowG}–${p.protein.highG} g a day` });
+  }
+  return {
+    title: 'Your progress',
+    facts,
+    meaning: [p.next.text],
+    method: LADDER_METHOD,
+    evidence: unique([
+      ...p.recovery.evidence,
+      ...p.response.evidence,
+      ...p.body.evidence,
+      ...p.next.evidence,
+      ...(p.protein?.evidence ?? []),
+    ]),
+  };
+}
+
 function whatWorkedContent(o: Outlook): AboutContent {
   const w = o.whatWorked;
   const shown = w.comparisons.filter((c) => c.distinguishing && !c.againstEvidence);
@@ -520,6 +581,8 @@ export function aboutContent(
   }
   if (!outlook) return undefined;
   switch (topic) {
+    case 'progress':
+      return progressContent(outlook);
     case 'plan':
       return planContent(outlook);
     case 'recovery':

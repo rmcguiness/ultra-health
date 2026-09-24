@@ -1,5 +1,7 @@
 import type { CitationId } from '../evidence/citations';
 import type { AerobicTrend } from '../fitness/aerobicTrend';
+import type { Goal } from '../goals/goal';
+import { weekPlan, type PlannedDay } from '../goals/week';
 import type { AdaptationState } from '../insights/adaptationState';
 import type { IllnessWatch } from '../recovery/illness';
 import type { Confidence, Readiness } from '../recovery/readiness';
@@ -11,7 +13,7 @@ import {
   type TrainingSession,
 } from '../training/guidelines';
 import type { LoadRamp } from '../training/ramp';
-import { daysBetween, type LocalDate } from '../time/dates';
+import { addDays, daysBetween, isoWeekday, type LocalDate } from '../time/dates';
 
 export type SessionKind =
   'rest' | 'recovery' | 'easy_aerobic' | 'moderate_aerobic' | 'hard_aerobic' | 'strength';
@@ -26,6 +28,8 @@ export interface Reason {
 
 export interface TodayPlan {
   readonly date: LocalDate;
+  /** What the week plan had for today, when a goal is set. */
+  readonly planned?: PlannedDay | undefined;
   readonly primary: SessionKind;
   readonly alternatives: readonly SessionKind[];
   /** Never empty; the first reason explains `primary`. */
@@ -47,6 +51,11 @@ export interface TodayInputs {
   readonly sessions: readonly TrainingSession[];
   /** Load already rising more than 30% in two weeks (floored at maintenance). */
   readonly fastRamp?: boolean;
+  /**
+   * The user's goal and training days. With one, today follows the week
+   * plan and readiness adjusts it; without, the plan fills the biggest gap.
+   */
+  readonly goal?: Goal | undefined;
 }
 
 /** High-intensity sessions need at least 48 h of autonomic recovery (Stanley 2013). */
@@ -118,6 +127,8 @@ export function planToday(inputs: TodayInputs): TodayPlan {
       confidence,
     };
   }
+
+  if (inputs.goal) return plannedDay(inputs, inputs.goal, confidence);
 
   const candidates: SessionKind[] = [];
   const sinceStrength = daysSince(sessions, date, (s) => isMuscleStrengthening(s.activityType));
@@ -199,6 +210,148 @@ export function planToday(inputs: TodayInputs): TodayPlan {
     reasons,
     confidence,
   };
+}
+
+/** Why today's strength session matters, in the goal's own terms. */
+const STRENGTH_WHY: Readonly<Record<Goal['kind'], Reason>> = {
+  lose_fat: {
+    summary: 'Strength day: lifting while you lose weight helps keep muscle.',
+    text: 'A strength day in your plan. In a trial of dieting older adults, those who lifted lost less lean mass than those who only did cardio, so more of what they lost was fat.',
+    evidence: ['villareal2017', 'garber2011'],
+  },
+  build_muscle: {
+    summary: 'Strength day: each muscle twice a week builds more than once.',
+    text: 'A strength day in your plan. Training each muscle group at least twice a week grew more muscle than once a week, so every session works the whole body.',
+    evidence: ['schoenfeld2016', 'garber2011'],
+  },
+  recomp: {
+    summary: 'Strength day: lifting is what builds and keeps muscle.',
+    text: 'A strength day in your plan. Resistance training is what builds and keeps muscle, and enough protein adds to what it builds.',
+    evidence: ['garber2011', 'morton2018'],
+  },
+  fitness: {
+    summary: 'Strength day: the guideline is 2 or more days a week.',
+    text: 'A strength day in your plan. Muscle-strengthening on 2 or more days a week is part of the physical activity guideline, alongside cardio.',
+    evidence: ['bull2020', 'garber2011'],
+  },
+  health: {
+    summary: 'Strength day: the guideline is 2 or more days a week.',
+    text: 'A strength day in your plan. Muscle-strengthening on 2 or more days a week is part of the physical activity guideline, alongside cardio.',
+    evidence: ['bull2020', 'garber2011'],
+  },
+};
+
+/**
+ * Today from the week plan: strength, cardio or rest as laid out for the
+ * goal, adjusted when the last 48 hours or recovery say otherwise.
+ */
+function plannedDay(inputs: TodayInputs, goal: Goal, confidence: Confidence): TodayPlan {
+  const { date, readiness, state, week, sessions, fastRamp = false } = inputs;
+  const plan = weekPlan(goal);
+  const planned = plan[isoWeekday(date)]!;
+  const sinceStrength = daysSince(sessions, date, (s) => isMuscleStrengthening(s.activityType));
+  const sinceHard = daysSince(sessions, date, isHard);
+  const strengthRested = sinceStrength === undefined || sinceStrength >= STRENGTH_SPACING_DAYS;
+  const done = (primary: SessionKind, alternatives: SessionKind[], reasons: Reason[]) => ({
+    date,
+    planned,
+    primary,
+    alternatives,
+    reasons,
+    confidence,
+  });
+
+  if (planned === 'rest') {
+    // A strength day missed earlier this week can move here.
+    // Only days since the goal started can have been missed.
+    const plannedStrength = [1, 2, 3, 4, 5, 6]
+      .map((k) => addDays(date, -k))
+      .filter((d) => d >= goal.startDate && plan[isoWeekday(d)] === 'strength').length;
+    const catchUp = strengthRested && week.strengthDays < Math.min(plannedStrength, 2);
+    return done('rest', catchUp ? ['strength', 'easy_aerobic'] : ['easy_aerobic'], [
+      {
+        summary: 'A rest day in your plan. An easy walk still counts.',
+        text: 'Today isn’t one of your training days. Rest days are part of the plan; an easy walk still adds to your daily steps.',
+        evidence: ['paluch2022'],
+      },
+      ...(catchUp
+        ? [
+            {
+              summary: 'Missed a strength day this week? Today works for it.',
+              text: `You planned ${Math.min(plannedStrength, 2)} strength ${plannedStrength === 1 ? 'day' : 'days'} in the last 6 days and did ${week.strengthDays}. If you want to catch up, today works: it has been 48 hours since you last lifted.`,
+              evidence: ['bull2020', 'garber2011'] as CitationId[],
+            },
+          ]
+        : []),
+    ]);
+  }
+
+  if (planned === 'strength') {
+    if (!strengthRested) {
+      return done(
+        'moderate_aerobic',
+        ['easy_aerobic', 'rest'],
+        [
+          {
+            summary: 'You lifted in the last 48 hours, so today is cardio instead.',
+            text: 'Today is a strength day in your plan, but you lifted within the last 48 hours and the same muscles need 48 hours between sessions. Cardio today, strength next time.',
+            evidence: ['garber2011'],
+          },
+        ],
+      );
+    }
+    return done('strength', ['easy_aerobic', 'rest'], [STRENGTH_WHY[goal.kind]]);
+  }
+
+  // A cardio day: how hard depends on recovery and the week so far.
+  const hardFits =
+    readiness.status === 'ready' &&
+    !fastRamp &&
+    week.vigorousMinutes < WHO_VIGOROUS_MINIMUM &&
+    (sinceHard === undefined || sinceHard >= HARD_SPACING_DAYS);
+  if (hardFits) {
+    return done(
+      'hard_aerobic',
+      ['moderate_aerobic', 'easy_aerobic'],
+      [
+        {
+          summary: 'Cardio day, and you’re recovered: a hard session fits.',
+          text: 'A cardio day in your plan. HRV is inside your normal range and your last hard session was at least 2 days ago, so a hard session fits today. Intervals raised VO₂max more than the same work done steadily.',
+          evidence: ['vesterinen2016', 'stanley2013', 'helgerud2007'],
+        },
+      ],
+    );
+  }
+  if (state.state === 'absorbing') {
+    return done(
+      'easy_aerobic',
+      ['recovery', 'rest'],
+      [
+        {
+          summary: 'Cardio day, kept easy: you’re carrying fatigue.',
+          text: 'A cardio day in your plan, kept easy because you are carrying fatigue from recent training. Easy volume keeps you moving while it clears.',
+          evidence: state.evidence,
+        },
+      ],
+    );
+  }
+  return done(
+    'moderate_aerobic',
+    ['easy_aerobic', 'rest'],
+    [
+      goal.kind === 'lose_fat'
+        ? {
+            summary: 'Cardio day: steady cardio adds to what you burn.',
+            text: `A cardio day in your plan. You have ${Math.round(week.equivalentMinutes)} of 150 weekly cardio minutes so far. Alongside eating a little less, 150–250 minutes a week of moderate activity helps weight loss.`,
+            evidence: ['donnelly2009', 'bull2020'],
+          }
+        : {
+            summary: `Cardio day: ${Math.round(week.equivalentMinutes)} of 150 weekly minutes so far.`,
+            text: `A cardio day in your plan. This week so far (the 6 days before today) you have ${Math.round(week.equivalentMinutes)} of the 150 weekly aerobic minutes (a vigorous minute counts double).`,
+            evidence: ['bull2020', 'garber2011'],
+          },
+    ],
+  );
 }
 
 // ── Weekly guidance ─────────────────────────────────────────────────────────

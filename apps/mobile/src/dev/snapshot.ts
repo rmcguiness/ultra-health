@@ -52,6 +52,9 @@ function snapshotHealth(profile: HealthProfile): HealthDataSource {
     fetchDailyStatistics: async () => [],
     earliestSampleMs: async () => undefined,
     readProfile: async () => profile,
+    saveMeasurement: async () => {
+      throw new Error('A read-only snapshot of your export is loaded, so nothing can be saved.');
+    },
   };
 }
 

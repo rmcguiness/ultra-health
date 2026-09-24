@@ -128,6 +128,20 @@ export class FakeHealthSource implements HealthDataSource {
     return this.earliest.get(metric.id);
   }
 
+  /** Measurements typed into the app, as Ultra Health's own source. */
+  async saveMeasurement(metric: MetricDefinition, value: number, at: Date) {
+    const startMs = at.getTime();
+    this.quantityLog(metric.id).add(
+      quantitySample({
+        startMs,
+        endMs: startMs,
+        value,
+        userEntered: true,
+        source: { bundleId: 'com.ryanmcguiness.ultrahealth', name: 'Ultra Health' },
+      }),
+    );
+  }
+
   profile: HealthProfile = { birthDate: undefined, sex: undefined };
 
   async readProfile() {

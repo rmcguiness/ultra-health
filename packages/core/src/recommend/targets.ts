@@ -24,8 +24,8 @@ export interface SessionTarget {
   readonly kind: SessionKind;
   /** Suggested length in minutes, rounded to 5; undefined when not applicable. */
   readonly minutes: number | undefined;
-  /** Your median session of this type, or the guideline minimum. */
-  readonly minutesBasis: 'your_sessions' | 'guideline' | undefined;
+  /** The time you planned, your median session of this type, or the guideline minimum. */
+  readonly minutesBasis: 'your_plan' | 'your_sessions' | 'guideline' | undefined;
   /** Heart rate to hold, bpm. Easy days have only a ceiling, hard days only a floor. */
   readonly heartRate: { readonly low?: number; readonly high?: number } | undefined;
   /** Hard days: 4 × 4 min at 90–95% HRmax with 3 min at 70% HRmax between (Helgerud 2007). */
@@ -33,6 +33,11 @@ export interface SessionTarget {
     { readonly work: BpmRange; readonly recovery: number; readonly reps: 4 } | undefined;
   /** Strength days: per major muscle group (Garber 2011). */
   readonly sets: { readonly sets: BpmRange; readonly reps: BpmRange } | undefined;
+  /**
+   * How the effort should feel, the talk test (Reed 2014): comfortable
+   * speech is possible below the ventilatory threshold and not above it.
+   */
+  readonly feel: string | undefined;
   readonly evidence: readonly CitationId[];
 }
 
@@ -48,6 +53,12 @@ const HARD: readonly WorkoutFamily[] = ['endurance', 'intervals'];
 const STRENGTH: readonly WorkoutFamily[] = ['strength'];
 
 const round5 = (m: number) => Math.max(5, Math.round(m / 5) * 5);
+
+const FEEL = {
+  easy: 'Easy: you could hold a full conversation.',
+  moderate: 'Moderate: breathing harder, but you can still talk in sentences.',
+  hard: 'Hard: talking comfortably is no longer possible.',
+} as const;
 
 /** Median length of your sessions in these families over the last 90 days. */
 export function typicalSessionMinutes(
@@ -91,9 +102,15 @@ export function sessionTarget(
     readonly sessions: readonly TrainingSession[];
     readonly asOf: LocalDate;
     readonly anchors: HeartRateAnchors | undefined;
+    /** Minutes the user set aside for a session, when they have a plan. */
+    readonly plannedMinutes?: number | undefined;
   },
 ): SessionTarget {
-  const { sessions, asOf, anchors } = input;
+  const { sessions, asOf, anchors, plannedMinutes } = input;
+  const length = (typical: number | undefined, floor: number) =>
+    plannedMinutes !== undefined
+      ? { minutes: plannedMinutes, minutesBasis: 'your_plan' as const }
+      : sessionLength(typical, floor);
   const bpm = (f: number) => (anchors ? bpmAtReserve(f, anchors) : undefined);
   const none = {
     kind,
@@ -102,6 +119,7 @@ export function sessionTarget(
     heartRate: undefined,
     intervals: undefined,
     sets: undefined,
+    feel: undefined,
   };
   switch (kind) {
     case 'rest':
@@ -111,9 +129,10 @@ export function sessionTarget(
       const high = bpm(VIGOROUS_HRR);
       return {
         ...none,
-        ...sessionLength(typicalSessionMinutes(sessions, asOf, AEROBIC), MODERATE_MIN_MINUTES),
+        ...length(typicalSessionMinutes(sessions, asOf, AEROBIC), MODERATE_MIN_MINUTES),
         heartRate: high === undefined ? undefined : { high: high - 1 },
-        evidence: ['garber2011', 'kiviniemi2007'],
+        feel: FEEL.easy,
+        evidence: ['garber2011', 'kiviniemi2007', 'reed2014'],
       };
     }
     case 'moderate_aerobic': {
@@ -121,17 +140,19 @@ export function sessionTarget(
       const high = bpm(VIGOROUS_HRR);
       return {
         ...none,
-        ...sessionLength(typicalSessionMinutes(sessions, asOf, AEROBIC), MODERATE_MIN_MINUTES),
+        ...length(typicalSessionMinutes(sessions, asOf, AEROBIC), MODERATE_MIN_MINUTES),
         heartRate: low === undefined || high === undefined ? undefined : { low, high: high - 1 },
-        evidence: ['garber2011', 'bull2020'],
+        feel: FEEL.moderate,
+        evidence: ['garber2011', 'bull2020', 'reed2014'],
       };
     }
     case 'hard_aerobic': {
       const low = bpm(VIGOROUS_HRR);
       return {
         ...none,
-        ...sessionLength(typicalSessionMinutes(sessions, asOf, HARD), VIGOROUS_MIN_MINUTES),
+        ...length(typicalSessionMinutes(sessions, asOf, HARD), VIGOROUS_MIN_MINUTES),
         heartRate: low === undefined ? undefined : { low },
+        feel: FEEL.hard,
         intervals: anchors
           ? {
               reps: 4,
@@ -142,15 +163,19 @@ export function sessionTarget(
               recovery: Math.round(0.7 * anchors.maxHr),
             }
           : undefined,
-        evidence: ['garber2011', 'helgerud2007'],
+        evidence: ['garber2011', 'helgerud2007', 'reed2014'],
       };
     }
     case 'strength': {
       const typical = typicalSessionMinutes(sessions, asOf, STRENGTH);
       return {
         ...none,
-        minutes: typical === undefined ? undefined : round5(typical),
-        minutesBasis: typical === undefined ? undefined : 'your_sessions',
+        ...(plannedMinutes !== undefined
+          ? { minutes: plannedMinutes, minutesBasis: 'your_plan' as const }
+          : {
+              minutes: typical === undefined ? undefined : round5(typical),
+              minutesBasis: typical === undefined ? undefined : ('your_sessions' as const),
+            }),
         sets: { sets: { low: 2, high: 4 }, reps: { low: 8, high: 12 } },
         evidence: ['garber2011'],
       };
