@@ -1,6 +1,9 @@
 import {
   AuthorizationRequestStatus,
+  BiologicalSex,
   areObjectTypesAvailableAsync,
+  getBiologicalSexAsync,
+  getDateOfBirthAsync,
   getRequestStatusForAuthorization,
   isHealthDataAvailableAsync,
   queryCategorySamplesWithAnchor,
@@ -29,6 +32,7 @@ import type {
   AnchoredPage,
   DailyStatisticRecord,
   HealthDataSource,
+  HealthProfile,
   QuantitySampleRecord,
   RetainedMetadata,
   SleepSegmentRecord,
@@ -36,6 +40,8 @@ import type {
 } from './types';
 
 const SLEEP_TYPE = 'HKCategoryTypeIdentifierSleepAnalysis';
+const SEX_TYPE = 'HKCharacteristicTypeIdentifierBiologicalSex';
+const BIRTH_DATE_TYPE = 'HKCharacteristicTypeIdentifierDateOfBirth';
 const WORKOUT_TYPE = 'HKWorkoutTypeIdentifier';
 const HEART_RATE_TYPE = 'HKQuantityTypeIdentifierHeartRate';
 const ACTIVE_ENERGY_TYPE = 'HKQuantityTypeIdentifierActiveEnergyBurned';
@@ -127,6 +133,8 @@ export function createHealthKitSource(): HealthDataSource {
     ...metrics.map(assertIdentifier),
     SLEEP_TYPE,
     WORKOUT_TYPE,
+    SEX_TYPE,
+    BIRTH_DATE_TYPE,
   ];
 
   return {
@@ -234,6 +242,21 @@ export function createHealthKitSource(): HealthDataSource {
         records.push({ date: localDateKey(bucket.startDate.getTime()), value: quantity.quantity });
       }
       return records;
+    },
+
+    async readProfile(): Promise<HealthProfile> {
+      // Characteristics throw when read access was denied; treat as unset.
+      const [sex, birth] = await Promise.all([
+        getBiologicalSexAsync().catch(() => BiologicalSex.notSet),
+        getDateOfBirthAsync().catch(() => undefined),
+      ]);
+      return {
+        // HealthKit returns date components; the bridge resolves them to local
+        // midnight, so the local calendar date is the birthday.
+        birthDate: birth ? localDateKey(birth.getTime()) : undefined,
+        sex:
+          sex === BiologicalSex.male ? 'male' : sex === BiologicalSex.female ? 'female' : undefined,
+      };
     },
 
     async earliestSampleMs(metric) {

@@ -61,6 +61,17 @@ export interface AnchoredQuery {
   readonly limit: number;
 }
 
+/**
+ * Characteristics the user set in the Health app. Training-load weighting
+ * (Banister TRIMP) differs by sex, and maximal heart rate is predicted from
+ * age, so load analytics need both; either can be unset.
+ */
+export interface HealthProfile {
+  /** `YYYY-MM-DD`. */
+  readonly birthDate: LocalDate | undefined;
+  readonly sex: 'female' | 'male' | undefined;
+}
+
 export interface DailyStatisticRecord {
   readonly date: LocalDate;
   readonly value: number;
@@ -90,4 +101,5 @@ export interface HealthDataSource {
   ): Promise<DailyStatisticRecord[]>;
   /** Oldest sample timestamp for a metric, used to bound historical backfill. */
   earliestSampleMs(metric: MetricDefinition): Promise<number | undefined>;
+  readProfile(): Promise<HealthProfile>;
 }

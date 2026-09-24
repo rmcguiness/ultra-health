@@ -294,3 +294,17 @@ export function getRecentWorkouts(db: SqlDatabase, limit: number): Promise<Worko
     [limit],
   );
 }
+
+/** First local date with data for a metric, from any source. */
+export async function getEarliestDate(
+  db: SqlDatabase,
+  metric: MetricDefinition,
+): Promise<LocalDate | undefined> {
+  const row = await db.getFirstAsync<{ first: LocalDate | null }>(
+    metric.sync === 'daily_statistics'
+      ? 'SELECT MIN(local_date) AS first FROM daily_statistics WHERE metric = ?'
+      : 'SELECT MIN(local_date) AS first FROM quantity_samples WHERE metric = ?',
+    [metric.id],
+  );
+  return row?.first ?? undefined;
+}

@@ -81,6 +81,10 @@ export class ExportHealthSource implements HealthDataSource {
     return this.data.quantity.get(metric.id)?.[0]?.startMs;
   }
 
+  async readProfile() {
+    return this.data.profile;
+  }
+
   private dailyValues(metric: MetricDefinition): Map<LocalDate, number> {
     const cached = this.daily.get(metric.id);
     if (cached) return cached;

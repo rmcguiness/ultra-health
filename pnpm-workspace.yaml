@@ -8,5 +8,6 @@ packages:
 nodeLinker: hoisted
 
 onlyBuiltDependencies:
+  - '@shopify/react-native-skia'
   - better-sqlite3
   - esbuild

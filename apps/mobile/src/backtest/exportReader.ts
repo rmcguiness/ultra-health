@@ -10,7 +10,12 @@ import {
   type SourceIdentity,
 } from '@ultra-health/core';
 
-import type { QuantitySampleRecord, SleepSegmentRecord, WorkoutRecord } from '@/health/types';
+import type {
+  HealthProfile,
+  QuantitySampleRecord,
+  SleepSegmentRecord,
+  WorkoutRecord,
+} from '@/health/types';
 
 /**
  * Streaming reader for Apple Health's `export.xml` (Health app → Export All
@@ -20,13 +25,8 @@ import type { QuantitySampleRecord, SleepSegmentRecord, WorkoutRecord } from '@/
  * HealthKit adapter maps live samples.
  */
 
-export interface ExportProfile {
-  readonly birthDate: string | undefined;
-  readonly sex: 'male' | 'female' | undefined;
-}
-
 export interface ParsedExport {
-  readonly profile: ExportProfile;
+  readonly profile: HealthProfile;
   readonly quantity: ReadonlyMap<MetricId, QuantitySampleRecord[]>;
   readonly sleep: readonly SleepSegmentRecord[];
   readonly workouts: readonly WorkoutRecord[];
@@ -236,7 +236,7 @@ export async function readExport(path: string): Promise<ParsedExport> {
   const quantity = new Map<MetricId, QuantitySampleRecord[]>();
   const sleep: SleepSegmentRecord[] = [];
   const workouts: WorkoutRecord[] = [];
-  let profile: ExportProfile = { birthDate: undefined, sex: undefined };
+  let profile: HealthProfile = { birthDate: undefined, sex: undefined };
   const counters = new Map<string, number>();
   const nextUuid = (prefix: string) => {
     const n = (counters.get(prefix) ?? 0) + 1;

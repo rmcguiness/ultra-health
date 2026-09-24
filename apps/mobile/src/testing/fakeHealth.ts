@@ -11,6 +11,7 @@ import type {
   AnchoredQuery,
   DailyStatisticRecord,
   HealthDataSource,
+  HealthProfile,
   QuantitySampleRecord,
   SleepSegmentRecord,
   WorkoutRecord,
@@ -125,6 +126,12 @@ export class FakeHealthSource implements HealthDataSource {
 
   async earliestSampleMs(metric: MetricDefinition) {
     return this.earliest.get(metric.id);
+  }
+
+  profile: HealthProfile = { birthDate: undefined, sex: undefined };
+
+  async readProfile() {
+    return this.profile;
   }
 }
 

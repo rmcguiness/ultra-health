@@ -1,14 +1,16 @@
 import { addDays, formatMetricValue, METRICS, type MetricId } from '@ultra-health/core';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { today, useMetricSnapshot } from '@/features/queries';
 
+import { dailyChart, rangeSpec } from '../charts/model';
+import { Sparkline } from '../charts/TimeSeriesChart';
 import { sourceLabel } from '../format';
 import { categoryColors, spacing } from '../theme';
 import { Card } from './Card';
 import { Text } from './Text';
-import { TrendChart } from './TrendChart';
 
 function describeDeviation(sd: number): string {
   const sign = sd > 0 ? '+' : sd < 0 ? '−' : '±';
@@ -31,6 +33,24 @@ export function MetricSnapshotCard({ metricId }: { metricId: MetricId }) {
   const latest = comparison?.latest;
   const baseline = comparison?.baseline;
   const to = today();
+  const series = data?.series;
+  // The last 67 days: the 60-day baseline window plus the recent week.
+  const model = useMemo(
+    () =>
+      series
+        ? dailyChart(
+            series.points,
+            { ...rangeSpec('3M'), days: 67 },
+            { from: addDays(to, -66), to },
+            {
+              cumulative: metric.dailyAggregation === 'sum',
+              kalmanTrend: metricId === 'body_mass',
+              integers: metric.display.decimals === 0 && !metric.display.scale,
+            },
+          )
+        : undefined,
+    [series, to, metric, metricId],
+  );
 
   return (
     <Card
@@ -81,16 +101,13 @@ export function MetricSnapshotCard({ metricId }: { metricId: MetricId }) {
               </View>
             ) : null}
           </View>
-          <TrendChart
-            points={data?.series.points ?? []}
-            from={addDays(to, -66)}
-            to={to}
-            color={color}
-            baseline={baseline}
-            formatValue={format}
-            height={72}
-            accessibilityLabel={`${metric.label} over the last 67 days`}
-          />
+          {model ? (
+            <Sparkline
+              model={model}
+              color={color}
+              accessibilityLabel={`${metric.label} over the last 67 days`}
+            />
+          ) : null}
         </>
       ) : (
         <Text variant="caption" tone="tertiary">

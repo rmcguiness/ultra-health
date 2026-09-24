@@ -3,16 +3,22 @@ import {
   addDays,
   compareToBaseline,
   localDateKey,
+  MS_PER_DAY,
+  MS_PER_MINUTE,
   METRICS,
+  startOfLocalDate,
   type BaselineComparison,
   type LocalDate,
   type MetricId,
   type SourceKind,
 } from '@ultra-health/core';
 
+import { getSamples } from '@/db/analyticsQueries';
 import {
   getDailySeries,
+  getEarliestDate,
   getInventory,
+  primarySourceKind,
   getRecentWorkouts,
   getSleepNights,
   type DailySeries,
@@ -20,6 +26,16 @@ import {
 } from '@/db/queries';
 import { listStreamStates } from '@/db/syncState';
 import { getServices } from '@/services';
+import {
+  dailyChart,
+  intradayChart,
+  leadInDays,
+  rangeSpec,
+  windowFor,
+  type ChartModel,
+  type DateWindow,
+  type RangeId,
+} from '@/ui/charts/model';
 import { useSyncStore } from '@/sync/store';
 
 /** Read models re-run when synced data changes; stale values stay visible meanwhile. */
@@ -99,6 +115,75 @@ export function useRecentWorkouts(limit: number) {
   return useQuery({
     queryKey: ['recent-workouts', limit, version],
     queryFn: async () => getRecentWorkouts(await reader(), limit),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export interface MetricChart {
+  readonly model: ChartModel;
+  readonly window: DateWindow;
+  readonly sourceKind: SourceKind | undefined;
+}
+
+/**
+ * One chart window: raw readings for D, daily values (with the lead-in the
+ * trend line and normal band need) for every other range. Sources are never
+ * blended; without a choice, the highest-priority source in the window wins.
+ */
+export function useMetricChart(
+  metricId: MetricId,
+  rangeId: RangeId,
+  offset: number,
+  sourceKind: SourceKind | undefined,
+) {
+  const version = useDataVersion();
+  const to = today();
+  return useQuery({
+    queryKey: ['metric-chart', metricId, rangeId, offset, sourceKind, to, version],
+    queryFn: async (): Promise<MetricChart> => {
+      const db = await reader();
+      const metric = METRICS[metricId];
+      const range = rangeSpec(rangeId);
+      const earliest = range.days === undefined ? await getEarliestDate(db, metric) : undefined;
+      const window = windowFor(range, offset, to, earliest);
+
+      if (range.id === 'D') {
+        const kind = sourceKind ?? (await primarySourceKind(db, metric, window));
+        const dayStart = startOfLocalDate(window.from);
+        const rows = kind
+          ? await getSamples(db, metric, kind, dayStart, dayStart + MS_PER_DAY)
+          : [];
+        const samples = rows.map((r) => ({
+          minute: (r.startMs - dayStart) / MS_PER_MINUTE,
+          value: r.value,
+        }));
+        const integers = metric.display.decimals === 0 && !metric.display.scale;
+        return { model: intradayChart(samples, window.from, integers), window, sourceKind: kind };
+      }
+
+      const series = await getDailySeries(
+        db,
+        metric,
+        { from: addDays(window.from, -leadInDays(range)), to: window.to },
+        sourceKind,
+      );
+      const model = dailyChart(series.points, range, window, {
+        cumulative: metric.dailyAggregation === 'sum',
+        kalmanTrend: metric.id === 'body_mass',
+        integers: metric.display.decimals === 0 && !metric.display.scale,
+      });
+      return { model, window, sourceKind: series.sourceKind };
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Sex and birth date from the Health app profile (read on demand, never stored). */
+export function useHealthProfile() {
+  const version = useDataVersion();
+  return useQuery({
+    queryKey: ['health-profile', version],
+    queryFn: async () => (await getServices()).health.readProfile(),
     placeholderData: keepPreviousData,
   });
 }

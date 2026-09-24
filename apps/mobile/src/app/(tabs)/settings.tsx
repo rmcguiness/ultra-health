@@ -1,9 +1,11 @@
+import { agePredictedMaxHr, daysBetween } from '@ultra-health/core';
 import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { seedSimulatorHealthData } from '@/dev/seedSimulator';
+import { today, useHealthProfile } from '@/features/queries';
 import { eraseLocalData } from '@/services';
 import { useSyncStore } from '@/sync/store';
 import { Button } from '@/ui/components/Button';
@@ -16,6 +18,10 @@ export default function Settings() {
   const router = useRouter();
   const { sync, status, bumpDataVersion } = useSyncStore();
   const [seeding, setSeeding] = useState(false);
+  const { data: profile } = useHealthProfile();
+  const age = profile?.birthDate
+    ? Math.floor(daysBetween(profile.birthDate, today()) / 365.2425)
+    : undefined;
 
   const confirmErase = () =>
     Alert.alert(
@@ -63,6 +69,22 @@ export default function Settings() {
             onPress={() => void sync()}
             loading={status === 'syncing'}
           />
+        </View>
+      </Card>
+
+      <Card>
+        <View style={styles.block}>
+          <Text variant="headline">Profile from Apple Health</Text>
+          <Text variant="body">
+            {profile?.sex ? (profile.sex === 'male' ? 'Male' : 'Female') : 'Sex not set'} ·{' '}
+            {age !== undefined ? `${age} years` : 'Birth date not set'}
+          </Text>
+          <Text variant="caption" tone="secondary">
+            Training load weights heart rate differently by sex (Banister TRIMP), and maximum heart
+            rate is estimated as 208 − 0.7 × age
+            {age !== undefined ? ` = ${Math.round(agePredictedMaxHr(age))} bpm` : ''} until a
+            workout goes higher. Change these in the Health app › your profile › Health Details.
+          </Text>
         </View>
       </Card>
 
