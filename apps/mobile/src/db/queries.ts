@@ -113,7 +113,7 @@ function pickByPriority(kinds: Iterable<SourceKind>): SourceKind | undefined {
   return SOURCE_PRIORITY.find((kind) => present.has(kind));
 }
 
-async function primarySourceKind(
+export async function primarySourceKind(
   db: SqlDatabase,
   metric: MetricDefinition,
   range: DateRange,
@@ -196,25 +196,28 @@ export interface SleepNight {
   readonly sourceKind: SourceKind;
   /** Union of asleep intervals, so overlapping segments are not double-counted. */
   readonly asleepMs: number;
+  /** The merged asleep intervals behind `asleepMs`, as [startMs, endMs]. */
+  readonly asleepIntervals: readonly (readonly [number, number])[];
   readonly stageMs: Readonly<Partial<Record<SleepStage, number>>>;
   readonly startMs: number;
   readonly endMs: number;
 }
 
-function unionDuration(intervals: [number, number][]): number {
-  if (intervals.length === 0) return 0;
+function mergeIntervals(intervals: [number, number][]): [number, number][] {
+  if (intervals.length === 0) return [];
   intervals.sort((a, b) => a[0] - b[0]);
-  let total = 0;
+  const merged: [number, number][] = [];
   let [curStart, curEnd] = intervals[0]!;
   for (const [start, end] of intervals.slice(1)) {
     if (start <= curEnd) {
       curEnd = Math.max(curEnd, end);
     } else {
-      total += curEnd - curStart;
+      merged.push([curStart, curEnd]);
       [curStart, curEnd] = [start, end];
     }
   }
-  return total + (curEnd - curStart);
+  merged.push([curStart, curEnd]);
+  return merged;
 }
 
 /** Nightly sleep, using the highest-priority source that recorded each night. */
@@ -252,10 +255,12 @@ export async function getSleepNights(db: SqlDatabase, range: DateRange): Promise
       stageMs[seg.stage] = (stageMs[seg.stage] ?? 0) + (seg.endMs - seg.startMs);
       if (ASLEEP_STAGES.has(seg.stage)) asleep.push([seg.startMs, seg.endMs]);
     }
+    const asleepIntervals = mergeIntervals(asleep);
     nights.push({
       date,
       sourceKind: kind,
-      asleepMs: unionDuration(asleep),
+      asleepMs: asleepIntervals.reduce((total, [start, end]) => total + end - start, 0),
+      asleepIntervals,
       stageMs,
       startMs: Math.min(...segments.map((s) => s.startMs)),
       endMs: Math.max(...segments.map((s) => s.endMs)),

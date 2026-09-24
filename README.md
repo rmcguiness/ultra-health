@@ -122,18 +122,36 @@ or Strain to Health; those need the Whoop API (see Roadmap).
   crash-resume, deletions, stream isolation, source separation, sleep overlap handling and
   daily-statistics rewind.
 
+## Analytics
+
+Every derived number (readiness, illness watch, training load, fitness trend, weight trend and
+forecast, sleep regularity, the in-shape scorecard and today's plan) is specified with its
+formula, thresholds, evidence and grade in [docs/algorithms.md](docs/algorithms.md). The
+research behind it is in [docs/research/](docs/research/).
+
+To check the analytics against your own history, put your Health export (Health app →
+profile → Export All Health Data, unzipped) in `data/apple_health_export/` and run:
+
+```bash
+pnpm --filter @ultra-health/mobile backtest
+```
+
+It prints aggregate validation statistics and writes day-level detail to `data/backtest/`,
+which is git-ignored and never leaves your machine.
+
 ## Roadmap
 
-1. **Analytics research** on the full export in `data/`: an evidence-graded algorithm spec
-   covering HRV-guided readiness (lnRMSSD/SDNN baselines), illness early warning (RHR + resp.
-   rate + wrist temp), training load (Banister TRIMP → fitness/fatigue), and body-composition
-   trend filtering.
+1. **Visuals** for the analytics: adaptation timeline, recovery compass, sleep barcode,
+   scorecard and today's plan.
 2. **Background delivery** (HealthKit observer queries) so data is fresh before you open the
    app.
 3. **Whoop API integration.** HRV (RMSSD), Recovery and Strain aren't written to HealthKit.
    Whoop's OAuth token exchange and refresh require the client secret, which can't ship in the
    app, so a small token broker (e.g. a Supabase Edge Function) holds it. Health data still
    flows Whoop → phone directly.
-4. **Scale vendor API** for metrics HealthKit can't store (visceral fat, muscle mass, body
+4. **Personal models**: fitted fitness–fatigue constants and water coefficients, plus a
+   prediction log that scores every forecast.
+5. **Nutrition**: intake as an input to the weight model (see docs/algorithms.md).
+6. **Scale vendor API** for metrics HealthKit can't store (visceral fat, muscle mass, body
    water).
-5. **Android** via Health Connect, as a second `HealthDataSource` adapter.
+7. **Android** via Health Connect, as a second `HealthDataSource` adapter.

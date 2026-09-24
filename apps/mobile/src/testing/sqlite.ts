@@ -7,9 +7,12 @@ export interface TestDatabase extends SqlDatabase {
   readonly raw: BetterSqlite3.Database;
 }
 
-/** In-memory SQLite that runs the production schema and SQL unchanged. */
-export function createTestDatabase(): TestDatabase {
-  const raw = new BetterSqlite3(':memory:');
+/**
+ * SQLite that runs the production schema and SQL unchanged. In memory by
+ * default; the back-test passes a file under the git-ignored `data/`.
+ */
+export function createTestDatabase(filename = ':memory:'): TestDatabase {
+  const raw = new BetterSqlite3(filename);
   raw.pragma('foreign_keys = ON');
   return {
     raw,
@@ -34,8 +37,8 @@ export function createTestDatabase(): TestDatabase {
   };
 }
 
-export async function createMigratedDatabase(): Promise<TestDatabase> {
-  const db = createTestDatabase();
+export async function createMigratedDatabase(filename?: string): Promise<TestDatabase> {
+  const db = createTestDatabase(filename);
   await migrate(db);
   return db;
 }

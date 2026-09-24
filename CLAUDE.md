@@ -20,7 +20,10 @@ See README.md for architecture. Expo-specific guidance: `apps/mobile/AGENTS.md`.
 - **The sync engine is the only DB writer.** UI reads go through `db.reader`.
 - Modules under `src/db`, `src/sync`, `src/health/types.ts` and `packages/core` must not
   import `react-native`; they are unit-tested in Node.
-- Every analytic claim or threshold shown to the user needs a citation in code comments or
-  the metric `description`.
+- Every analytic claim or threshold shown to the user needs a citation: add the source to
+  `packages/core/src/evidence/citations.ts`, reference its ID in code, and update
+  `docs/algorithms.md` (the spec for all analytics). Verify new sources against PubMed.
+- After changing analytics, run the back-test (`pnpm --filter @ultra-health/mobile backtest`)
+  if `data/` holds an export. Its stdout is aggregate only; don't print day-level values.
 - Don't name directories `lib/`: the user's global gitignore excludes them.
 - `data/` holds the user's real health export. Never commit it or send it anywhere.
