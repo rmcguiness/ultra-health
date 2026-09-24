@@ -13,6 +13,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="sun.max" />
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="trends">
+        <NativeTabs.Trigger.Icon sf="chart.xyaxis.line" />
+        <NativeTabs.Trigger.Label>Trends</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="overview">
         <NativeTabs.Trigger.Icon sf="waveform.path.ecg" />
         <NativeTabs.Trigger.Label>Overview</NativeTabs.Trigger.Label>

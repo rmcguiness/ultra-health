@@ -38,3 +38,26 @@ export const typography = {
   footnote: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
   metric: { fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] },
 } satisfies Record<string, TextStyle>;
+
+/**
+ * Two-series palette for lanes that compare a pair (fitness vs fatigue, HRV
+ * vs resting HR). Checked with the dataviz palette validator on the dark
+ * surface: lightness band, chroma, CVD ΔE ≈ 28 (protan), normal ΔE ≈ 30.
+ */
+export const series = {
+  one: '#4C8DF6',
+  two: '#CC8030',
+} as const;
+
+/** Adaptation-state ribbon: status tones, always shown with a text label. */
+export const stateColors = {
+  possible_illness: '#FF6B6B',
+  detraining: '#F5B544',
+  strained: '#F5B544',
+  building: '#3DD68C',
+  absorbing: '#6B7380',
+  freshening: '#A3ABB8',
+  maintaining: '#3A404A',
+  inactive: '#262B33',
+  insufficient_data: '#1B1F26',
+} as const;

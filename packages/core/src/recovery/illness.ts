@@ -64,17 +64,34 @@ export const ILLNESS_CALIBRATION = {
 
 type Statistic = (date: LocalDate) => number | undefined;
 
-function statistics(inputs: IllnessInputs): Partial<Record<IllnessSignalId, Statistic>> {
+/** Caches each day's statistic: every day's personal limit reads the same 180 values. */
+function memo(stat: Statistic): Statistic {
+  const cache = new Map<LocalDate, number | undefined>();
+  return (date) => {
+    if (cache.has(date)) return cache.get(date);
+    const v = stat(date);
+    cache.set(date, v);
+    return v;
+  };
+}
+
+function statistics(
+  inputs: Omit<IllnessInputs, 'date'>,
+): Partial<Record<IllnessSignalId, Statistic>> {
   const out: Partial<Record<IllnessSignalId, Statistic>> = {};
   const { restingHr, respiratoryRate, wristTemperature, hrv } = inputs;
-  if (restingHr) out.resting_hr = (d) => deviationOn(restingHr, d)?.zToday;
-  if (respiratoryRate) out.respiratory_rate = (d) => deviationOn(respiratoryRate, d)?.deltaToday;
-  if (wristTemperature) out.wrist_temperature = (d) => deviationOn(wristTemperature, d)?.deltaToday;
+  if (restingHr) out.resting_hr = memo((d) => deviationOn(restingHr, d)?.zToday);
+  if (respiratoryRate) {
+    out.respiratory_rate = memo((d) => deviationOn(respiratoryRate, d)?.deltaToday);
+  }
+  if (wristTemperature) {
+    out.wrist_temperature = memo((d) => deviationOn(wristTemperature, d)?.deltaToday);
+  }
   if (hrv) {
-    out.hrv = (d) => {
+    out.hrv = memo((d) => {
       const z = deviationOn(hrv, d, { log: true })?.zToday;
       return z === undefined ? undefined : -z;
-    };
+    });
   }
   return out;
 }
@@ -98,31 +115,42 @@ function personalLimit(stat: Statistic, date: LocalDate): number | undefined {
  * never a diagnosis.
  */
 export function illnessWatch(inputs: IllnessInputs): IllnessWatch {
-  const signals: IllnessSignal[] = [];
-  const calibrating: IllnessSignalId[] = [];
+  return createIllnessWatcher(inputs)(inputs.date);
+}
 
-  for (const [id, stat] of Object.entries(statistics(inputs)) as [IllnessSignalId, Statistic][]) {
-    const value = stat(inputs.date);
-    if (value === undefined) continue;
-    const limit = personalLimit(stat, inputs.date);
-    if (limit === undefined) {
-      calibrating.push(id);
-      continue;
+/**
+ * The same check for many days in a row. Statistics are cached across days,
+ * so a year of history costs one pass over the data rather than one per day.
+ */
+export function createIllnessWatcher(
+  inputs: Omit<IllnessInputs, 'date'>,
+): (date: LocalDate) => IllnessWatch {
+  const stats = Object.entries(statistics(inputs)) as [IllnessSignalId, Statistic][];
+  return (date) => {
+    const signals: IllnessSignal[] = [];
+    const calibrating: IllnessSignalId[] = [];
+    for (const [id, stat] of stats) {
+      const value = stat(date);
+      if (value === undefined) continue;
+      const limit = personalLimit(stat, date);
+      if (limit === undefined) {
+        calibrating.push(id);
+        continue;
+      }
+      const threshold = Math.max(ILLNESS_FLOORS[id], limit);
+      let triggered = value >= threshold;
+      if (id === 'resting_hr' && triggered) {
+        const yesterday = stat(addDays(date, -1));
+        triggered = yesterday !== undefined && yesterday >= threshold;
+      }
+      signals.push({ signal: id, value, threshold, triggered });
     }
-    const threshold = Math.max(ILLNESS_FLOORS[id], limit);
-    let triggered = value >= threshold;
-    if (id === 'resting_hr' && triggered) {
-      const yesterday = stat(addDays(inputs.date, -1));
-      triggered = yesterday !== undefined && yesterday >= threshold;
-    }
-    signals.push({ signal: id, value, threshold, triggered });
-  }
-
-  return {
-    date: inputs.date,
-    alert: signals.filter((s) => s.triggered).length >= 2,
-    signals,
-    calibrating,
-    evidence: ['mishra2020', 'natarajan2020', 'mason2022', 'heikkinen2003'],
+    return {
+      date,
+      alert: signals.filter((s) => s.triggered).length >= 2,
+      signals,
+      calibrating,
+      evidence: ['mishra2020', 'natarajan2020', 'mason2022', 'heikkinen2003'],
+    };
   };
 }

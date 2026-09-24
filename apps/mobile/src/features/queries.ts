@@ -9,6 +9,7 @@ import {
   startOfLocalDate,
   type BaselineComparison,
   type LocalDate,
+  type MetricDefinition,
   type MetricId,
   type SourceKind,
 } from '@ultra-health/core';
@@ -119,6 +120,15 @@ export function useRecentWorkouts(limit: number) {
   });
 }
 
+/** Whole-number metrics get whole-number ticks. */
+export function integersFor(metric: MetricDefinition): boolean {
+  return metric.display.decimals === 0;
+}
+
+export function displayOf(metric: MetricDefinition) {
+  return { scale: metric.display.scale ?? 1, offset: metric.display.offset ?? 0 };
+}
+
 export interface MetricChart {
   readonly model: ChartModel;
   readonly window: DateWindow;
@@ -157,8 +167,11 @@ export function useMetricChart(
           minute: (r.startMs - dayStart) / MS_PER_MINUTE,
           value: r.value,
         }));
-        const integers = metric.display.decimals === 0 && !metric.display.scale;
-        return { model: intradayChart(samples, window.from, integers), window, sourceKind: kind };
+        return {
+          model: intradayChart(samples, window.from, integersFor(metric), displayOf(metric)),
+          window,
+          sourceKind: kind,
+        };
       }
 
       const series = await getDailySeries(
@@ -170,7 +183,8 @@ export function useMetricChart(
       const model = dailyChart(series.points, range, window, {
         cumulative: metric.dailyAggregation === 'sum',
         kalmanTrend: metric.id === 'body_mass',
-        integers: metric.display.decimals === 0 && !metric.display.scale,
+        integers: integersFor(metric),
+        display: displayOf(metric),
       });
       return { model, window, sourceKind: series.sourceKind };
     },

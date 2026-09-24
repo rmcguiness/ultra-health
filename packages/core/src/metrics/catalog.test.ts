@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   METRIC_IDS,
   METRICS,
+  formatMetricDelta,
   formatMetricValue,
   isMetricId,
   isPlausible,
@@ -46,5 +47,16 @@ describe('metric catalog', () => {
   it('narrows unknown strings', () => {
     expect(isMetricId('hrv_sdnn')).toBe(true);
     expect(isMetricId('toString')).toBe(false);
+  });
+});
+
+describe('formatMetricDelta', () => {
+  it('scales differences without applying offsets', () => {
+    const fahrenheit = {
+      ...METRICS.sleeping_wrist_temperature,
+      display: { unit: '°F', decimals: 1, scale: 1.8, offset: 32 },
+    };
+    expect(formatMetricDelta(fahrenheit, 1)).toBe('1.8');
+    expect(formatMetricDelta(METRICS.body_mass, 1)).toBe('2.2');
   });
 });

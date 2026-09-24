@@ -31,7 +31,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import {
-  analyzeDay,
+  analyzeRange,
   chooseHrv,
   loadSeries,
   outlook,
@@ -226,9 +226,7 @@ describe.skipIf(!existsSync(EXPORT))('back-test on the Apple Health export', () 
     // Day-by-day, as each morning would have seen it.
     const load = loadSeries(inputs);
     const start = addDays(range.from, 60);
-    const days: DailyAnalysis[] = enumerateDates(start, range.to).map((d) =>
-      analyzeDay(inputs, load, d),
-    );
+    const days: DailyAnalysis[] = analyzeRange(inputs, load, start, range.to);
 
     // Readiness distribution.
     const byStatus = new Map<string, number>();

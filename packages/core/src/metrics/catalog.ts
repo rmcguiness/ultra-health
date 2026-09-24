@@ -375,3 +375,14 @@ export function formatMetricValue(metric: MetricDefinition, value: number): stri
     maximumFractionDigits: metric.display.decimals,
   });
 }
+
+/**
+ * A difference between two stored values in display units: the unit scale
+ * applies, the offset does not (a 1 °C rise is 1.8 °F, not 33.8 °F).
+ */
+export function formatMetricDelta(metric: MetricDefinition, delta: number): string {
+  return (delta * (metric.display.scale ?? 1)).toLocaleString('en-US', {
+    minimumFractionDigits: metric.display.decimals,
+    maximumFractionDigits: metric.display.decimals,
+  });
+}

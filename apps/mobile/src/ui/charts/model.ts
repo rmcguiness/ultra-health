@@ -120,6 +120,11 @@ export interface ChartModel {
   readonly from: LocalDate;
   /** Whole-number metric: y-axis ticks avoid fractions. */
   readonly integers: boolean;
+  /**
+   * Stored → displayed units (kg → lb, fraction → %). Ticks are chosen in
+   * display units so labels come out round (180, 185 lb, not 185.19).
+   */
+  readonly display: { readonly scale: number; readonly offset: number };
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -232,6 +237,27 @@ export function hasGaps(model: ChartModel): boolean {
   return model.mark === 'line' && segments(model.points, model.gapThreshold).some((s) => s.gap);
 }
 
+const IDENTITY = { scale: 1, offset: 0 } as const;
+
+/**
+ * Nice ticks chosen in display units, returned in stored units for
+ * positioning, so every label is a round number in the unit the user reads.
+ */
+export function displayTicks(
+  min: number,
+  max: number,
+  display: { readonly scale: number; readonly offset: number },
+  integers: boolean,
+  target = 4,
+): number[] {
+  const toD = (v: number) => v * display.scale + display.offset;
+  const a = toD(min);
+  const b = toD(max);
+  return niceTicks(Math.min(a, b), Math.max(a, b), target, integers).map(
+    (t) => (t - display.offset) / display.scale,
+  );
+}
+
 export interface Segment {
   readonly from: ChartPoint;
   readonly to: ChartPoint;
@@ -276,6 +302,7 @@ export function dailyChart(
     readonly cumulative: boolean;
     readonly kalmanTrend: boolean;
     readonly integers?: boolean;
+    readonly display?: { readonly scale: number; readonly offset: number };
   },
 ): ChartModel {
   const n = daysBetween(window.from, window.to) + 1;
@@ -359,6 +386,7 @@ export function dailyChart(
     unit: weekly ? 'week' : 'day',
     from: window.from,
     integers: options.integers ?? false,
+    display: options.display ?? IDENTITY,
   };
 }
 
@@ -367,6 +395,7 @@ export function intradayChart(
   samples: readonly { readonly minute: number; readonly value: number }[],
   date: LocalDate,
   integers = false,
+  display: { readonly scale: number; readonly offset: number } = IDENTITY,
 ): ChartModel {
   const points = samples.map((s) => ({ x: s.minute, value: s.value, n: 1 }));
   return {
@@ -383,6 +412,7 @@ export function intradayChart(
     unit: 'minute',
     from: date,
     integers,
+    display,
   };
 }
 

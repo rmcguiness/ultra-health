@@ -6,7 +6,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Text } from '../components/Text';
 import { colors } from '../theme';
-import { nearestIndex, niceTicks, segments, type ChartModel } from './model';
+import { displayTicks, nearestIndex, segments, type ChartModel } from './model';
 
 interface TimeSeriesChartProps {
   readonly model: ChartModel;
@@ -67,7 +67,7 @@ export function TimeSeriesChart({
     // wins the race cancels this gesture, and clearing there would erase the
     // tap's selection.
     const pan = Gesture.Pan()
-      .activateAfterLongPress(150)
+      .activateAfterLongPress(250)
       .runOnJS(true)
       .onStart((e) => select(e.x))
       .onUpdate((e) => select(e.x));
@@ -223,7 +223,7 @@ function makeScales(model: ChartModel, plotW: number, top: number, plotH: number
     ...(model.mark === 'bar' ? [0] : []),
   ];
   const ticks = values.length
-    ? niceTicks(Math.min(...values), Math.max(...values), 4, model.integers)
+    ? displayTicks(Math.min(...values), Math.max(...values), model.display, model.integers)
     : [];
   const y0 = ticks[0] ?? 0;
   const y1 = ticks[ticks.length - 1] ?? 1;

@@ -4,12 +4,13 @@ import {
   addDays,
   aerobicTrend,
   blockFeatures,
+  createIllnessWatcher,
   deviationOn,
+  enumerateDates,
   detrainingOutlook,
   fitnessFatigue,
   fitWeightParams,
   forecastWeight,
-  illnessWatch,
   maintenanceCheck,
   mean,
   planToday,
@@ -78,6 +79,9 @@ export interface DailyAnalysis {
   readonly week: ActivityWeek;
   readonly maintenance: MaintenanceCheck;
   readonly plan: TodayPlan;
+  /** 7-day means vs baseline, robust SD units (the recovery compass axes). */
+  readonly hrvZ7: number | undefined;
+  readonly rhrZ7: number | undefined;
 }
 
 /** Fitness–fatigue over the whole input range, rest days included. */
@@ -100,29 +104,27 @@ export function analyzeDay(
   inputs: AnalyticsInputs,
   load: readonly FitnessFatiguePoint[],
   date: LocalDate,
+  watchers?: IllnessWatchers,
 ): DailyAnalysis {
   const { series } = inputs;
   const hrv = chooseHrv(inputs, date);
+  const w = watchers ?? illnessWatchers(inputs);
   const ready = readiness({
     date,
     hrv: hrv.series,
     restingHr: series.restingHr,
     sleepHours: series.sleepHours,
   });
-  const illness = illnessWatch({
-    date,
-    restingHr: series.restingHr,
-    hrv: hrv.series,
-    respiratoryRate: series.respiratoryRate,
-    wristTemperature: series.wristTemperature,
-  });
+  const illness = (hrv.kind === 'all_day' ? w.allDay : w.nocturnal)(date);
   // Morning view: yesterday's training is the latest that has happened.
   const yesterday = addDays(date, -1);
   const upToYesterday = load.filter((p) => p.date <= yesterday);
+  const hrvZ7 = hrv.series ? deviationOn(hrv.series, date, { log: true })?.zRecent : undefined;
+  const rhrZ7 = series.restingHr ? deviationOn(series.restingHr, date)?.zRecent : undefined;
   const state = adaptationState({
     date: yesterday,
     load: upToYesterday,
-    hrvZRecent: hrv.series ? deviationOn(hrv.series, date, { log: true })?.zRecent : undefined,
+    hrvZRecent: hrvZ7,
     walkingHrChange21: walkingHrChange21(series.walkingHr, date),
     illnessAlert: illness.alert,
   });
@@ -137,7 +139,39 @@ export function analyzeDay(
     week,
     maintenance: maintenanceCheck(week),
     plan: planToday({ date, readiness: ready, illness, state, week, sessions: inputs.sessions }),
+    hrvZ7,
+    rhrZ7,
   };
+}
+
+/** Illness checks for each HRV series, sharing cached statistics across days. */
+export interface IllnessWatchers {
+  readonly nocturnal: ReturnType<typeof createIllnessWatcher>;
+  readonly allDay: ReturnType<typeof createIllnessWatcher>;
+}
+
+export function illnessWatchers(inputs: AnalyticsInputs): IllnessWatchers {
+  const { series } = inputs;
+  const base = {
+    restingHr: series.restingHr,
+    respiratoryRate: series.respiratoryRate,
+    wristTemperature: series.wristTemperature,
+  };
+  return {
+    nocturnal: createIllnessWatcher({ ...base, hrv: series.hrvNocturnal }),
+    allDay: createIllnessWatcher({ ...base, hrv: series.hrvAllDay }),
+  };
+}
+
+/** Every morning in [from, to], each using only the data available that day. */
+export function analyzeRange(
+  inputs: AnalyticsInputs,
+  load: readonly FitnessFatiguePoint[],
+  from: LocalDate,
+  to: LocalDate,
+): DailyAnalysis[] {
+  const watchers = illnessWatchers(inputs);
+  return enumerateDates(from, to).map((d) => analyzeDay(inputs, load, d, watchers));
 }
 
 export interface Outlook {

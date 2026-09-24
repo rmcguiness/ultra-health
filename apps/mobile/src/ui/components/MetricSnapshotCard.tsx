@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { today, useMetricSnapshot } from '@/features/queries';
+import { displayOf, integersFor, today, useMetricSnapshot } from '@/features/queries';
 
 import { dailyChart, rangeSpec } from '../charts/model';
 import { Sparkline } from '../charts/TimeSeriesChart';
@@ -45,7 +45,8 @@ export function MetricSnapshotCard({ metricId }: { metricId: MetricId }) {
             {
               cumulative: metric.dailyAggregation === 'sum',
               kalmanTrend: metricId === 'body_mass',
-              integers: metric.display.decimals === 0 && !metric.display.scale,
+              integers: integersFor(metric),
+              display: displayOf(metric),
             },
           )
         : undefined,

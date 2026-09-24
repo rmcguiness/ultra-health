@@ -1,9 +1,9 @@
 import {
+  formatMetricDelta,
   formatMetricValue,
   isMetricId,
   METRICS,
   summarize,
-  toDisplayValue,
   type MetricDefinition,
   type MetricId,
   type SourceKind,
@@ -26,6 +26,7 @@ import {
   type ChartModel,
   type RangeId,
 } from '@/ui/charts/model';
+import { tickFormatter } from '@/ui/charts/format';
 import { TimeSeriesChart } from '@/ui/charts/TimeSeriesChart';
 import { formatCount, sourceLabel } from '@/ui/format';
 import { categoryColors, colors, radii, spacing } from '@/ui/theme';
@@ -49,17 +50,6 @@ export default function MetricDetail() {
     );
   }
   return <MetricDetailContent metricId={id} />;
-}
-
-/** Axis labels: compact, in display units, without trailing zeros. */
-function tickFormatter(metric: MetricDefinition) {
-  return (v: number) => {
-    const d = toDisplayValue(metric, v);
-    const abs = Math.abs(d);
-    if (abs >= 10_000) return `${Math.round(d / 1000)}k`;
-    if (abs >= 1000) return `${(d / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-    return Number.isInteger(d) ? String(d) : String(Number(d.toFixed(2)));
-  };
 }
 
 function MetricDetailContent({ metricId }: { metricId: MetricId }) {
@@ -242,9 +232,9 @@ function ChartHeader({
     if (point && band) {
       versus =
         point.value > band.high
-          ? `${format(point.value - band.center)} above your normal`
+          ? `${formatMetricDelta(metric, point.value - band.center)} above your normal`
           : point.value < band.low
-            ? `${format(band.center - point.value)} below your normal`
+            ? `${formatMetricDelta(metric, band.center - point.value)} below your normal`
             : 'Within your normal range';
     }
     return (
