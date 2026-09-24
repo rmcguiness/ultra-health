@@ -105,6 +105,16 @@ Install a standalone Release build (no dev server needed; the signing profile la
 cd apps/mobile && pnpm ios:phone
 ```
 
+If the build stops at "No profiles for 'com.ryanmcguiness.ultrahealth' were found", Xcode
+hasn't created the signing profile yet. Run the build once with automatic provisioning, then
+`pnpm ios:phone` works from then on:
+
+```bash
+cd apps/mobile && xcodebuild -workspace ios/UltraHealth.xcworkspace -scheme UltraHealth \
+  -configuration Release -destination 'generic/platform=iOS' -derivedDataPath ios/build \
+  -allowProvisioningUpdates -allowProvisioningDeviceRegistration build
+```
+
 The first sync backfills your full history. Raw heart rate is the largest stream and runs
 last, so everything else appears first.
 
