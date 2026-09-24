@@ -42,6 +42,7 @@ describe('metric catalog', () => {
     expect(toDisplayValue(METRICS.oxygen_saturation, 0.97)).toBeCloseTo(97);
     expect(formatMetricValue(METRICS.body_mass, 80)).toBe('176.4');
     expect(formatMetricValue(METRICS.steps, 12345)).toBe('12,345');
+    expect(formatMetricValue(METRICS.waist_circumference, 86.36)).toBe('34.0');
   });
 
   it('narrows unknown strings', () => {

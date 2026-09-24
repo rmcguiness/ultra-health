@@ -213,6 +213,20 @@ const definitions = [
       'Weight ÷ height². BMI is a population screening index. It cannot tell muscle from ' +
       'fat, so it misclassifies muscular individuals.',
   },
+  {
+    id: 'waist_circumference',
+    label: 'Waist',
+    category: 'body_composition',
+    healthKit: { identifier: 'HKQuantityTypeIdentifierWaistCircumference', unit: 'cm' },
+    sync: 'samples',
+    dailyAggregation: 'median',
+    display: { unit: 'in', decimals: 1, scale: 1 / 2.54 },
+    plausibleRange: [40, 250],
+    description:
+      'Waist circumference, measured with a tape. It reflects abdominal fat and adds to BMI ' +
+      'in predicting health risk (Ross 2020). Measure standing, after a normal breath out, at ' +
+      'the same spot each time (midway between the lowest rib and the top of the hip bone).',
+  },
   // ── Activity (daily aggregates computed by HealthKit) ───────────────────
   {
     id: 'steps',

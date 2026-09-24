@@ -43,7 +43,7 @@ steep.
 - [x] **A1 Source choice for body metrics.** `primarySourceKind` picks the kind with the most
       days for body-composition metrics; Ultra Health's own entries classify as `manual`.
       Tests for both. Back-test shows the Wyze weigh-ins.
-- [ ] **A2 Waist circumference.** Catalog entry (`waist_circumference`, HealthKit
+- [x] **A2 Waist circumference.** Catalog entry (`waist_circumference`, HealthKit
       `WaistCircumference`, stored cm, shown in inches), read permission, Data tab.
 - [ ] **A3 Fat mass and lean mass trends.** `packages/core/src/body/composition.ts`: fat mass
       (weight × body fat) and lean mass in kg from the same scale on the same morning, each

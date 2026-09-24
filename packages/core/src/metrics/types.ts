@@ -75,6 +75,7 @@ export type MetricId =
   | 'body_fat_percentage'
   | 'lean_body_mass'
   | 'body_mass_index'
+  | 'waist_circumference'
   | 'steps'
   | 'active_energy'
   | 'basal_energy'

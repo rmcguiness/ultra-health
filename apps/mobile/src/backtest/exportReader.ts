@@ -47,6 +47,9 @@ const UNIT_CONVERSIONS: Readonly<Record<string, (v: number) => number>> = {
   mi: (v) => v * 1609.344,
   km: (v) => v * 1000,
   m: (v) => v,
+  // Waist circumference, the only length stored in centimetres.
+  in: (v) => v * 2.54,
+  cm: (v) => v,
   'mi/hr': (v) => v * 0.44704,
   'km/hr': (v) => v / 3.6,
   'm/s': (v) => v,

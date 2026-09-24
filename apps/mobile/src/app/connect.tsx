@@ -14,7 +14,7 @@ import { colors, spacing } from '@/ui/theme';
 const READS = [
   ['Heart', 'Heart rate, resting & walking HR, HRV, recovery'],
   ['Sleep', 'Sleep stages, respiratory rate, blood oxygen, wrist temperature'],
-  ['Body', 'Weight, body fat, lean mass, BMI'],
+  ['Body', 'Weight, body fat, lean mass, BMI, waist'],
   ['Activity', 'Steps, energy, exercise minutes, workouts, VO₂ max'],
 ] as const;
 

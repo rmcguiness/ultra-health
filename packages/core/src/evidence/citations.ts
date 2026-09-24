@@ -457,6 +457,111 @@ export const CITATIONS = {
     journal: 'AIAA J 3:1445–50',
     doi: '10.2514/3.3166',
   },
+  // ── Goals and body composition (verified on PubMed 2026-09-24) ─────────────
+  nedeltcheva2010: {
+    authors: 'Nedeltcheva AV, Kilkus JM, Imperial J, Schoeller DA, Penev PD',
+    year: 2010,
+    title: 'Insufficient sleep undermines dietary efforts to reduce adiposity',
+    journal: 'Ann Intern Med 153:435–41',
+    doi: '10.7326/0003-4819-153-7-201010050-00006',
+    pmid: '20921542',
+  },
+  donnelly2009: {
+    authors: 'Donnelly JE, Blair SN, Jakicic JM, Manore MM, Rankin JW, Smith BK',
+    year: 2009,
+    title:
+      'American College of Sports Medicine Position Stand. Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults',
+    journal: 'Med Sci Sports Exerc 41:459–71',
+    doi: '10.1249/MSS.0b013e3181949333',
+    pmid: '19127177',
+  },
+  ross2020: {
+    authors: 'Ross R, Neeland IJ, Yamashita S, et al.',
+    year: 2020,
+    title:
+      'Waist circumference as a vital sign in clinical practice: a Consensus Statement from the IAS and ICCR Working Group on Visceral Obesity',
+    journal: 'Nat Rev Endocrinol 16:177–89',
+    doi: '10.1038/s41574-019-0310-7',
+    pmid: '32020062',
+  },
+  ashwell2012: {
+    authors: 'Ashwell M, Gunn P, Gibson S',
+    year: 2012,
+    title:
+      'Waist-to-height ratio is a better screening tool than waist circumference and BMI for adult cardiometabolic risk factors: systematic review and meta-analysis',
+    journal: 'Obes Rev 13:275–86',
+    doi: '10.1111/j.1467-789X.2011.00952.x',
+    pmid: '22106927',
+  },
+  schoenfeld2016: {
+    authors: 'Schoenfeld BJ, Ogborn D, Krieger JW',
+    year: 2016,
+    title:
+      'Effects of resistance training frequency on measures of muscle hypertrophy: a systematic review and meta-analysis',
+    journal: 'Sports Med 46:1689–97',
+    doi: '10.1007/s40279-016-0543-8',
+    pmid: '27102172',
+  },
+  longland2016: {
+    authors: 'Longland TM, Oikawa SY, Mitchell CJ, Devries MC, Phillips SM',
+    year: 2016,
+    title:
+      'Higher compared with lower dietary protein during an energy deficit combined with intense exercise promotes greater lean mass gain and fat mass loss: a randomized trial',
+    journal: 'Am J Clin Nutr 103:738–46',
+    doi: '10.3945/ajcn.115.119339',
+    pmid: '26817506',
+  },
+  villareal2017: {
+    authors: 'Villareal DT, Aguirre L, Gurney AB, et al.',
+    year: 2017,
+    title: 'Aerobic or resistance exercise, or both, in dieting obese older adults',
+    journal: 'N Engl J Med 376:1943–55',
+    doi: '10.1056/NEJMoa1616338',
+    pmid: '28514618',
+  },
+  mountjoy2018: {
+    authors: 'Mountjoy M, Sundgot-Borgen JK, Burke LM, et al.',
+    year: 2018,
+    title: 'IOC consensus statement on relative energy deficiency in sport (RED-S): 2018 update',
+    journal: 'Br J Sports Med 52:687–97',
+    doi: '10.1136/bjsports-2018-099193',
+    pmid: '29773536',
+  },
+  acsm2009: {
+    authors: 'ACSM (American College of Sports Medicine)',
+    year: 2009,
+    title:
+      'American College of Sports Medicine position stand. Progression models in resistance training for healthy adults',
+    journal: 'Med Sci Sports Exerc 41:687–708',
+    doi: '10.1249/MSS.0b013e3181915670',
+    pmid: '19204579',
+  },
+  reed2014: {
+    authors: 'Reed JL, Pipe AL',
+    year: 2014,
+    title: 'The talk test: a useful tool for prescribing and monitoring exercise intensity',
+    journal: 'Curr Opin Cardiol 29:475–80',
+    doi: '10.1097/HCO.0000000000000097',
+    pmid: '25010379',
+  },
+  refalo2023: {
+    authors: 'Refalo MC, Helms ER, Trexler ET, Hamilton DL, Fyfe JJ',
+    year: 2023,
+    title:
+      'Influence of resistance training proximity-to-failure on skeletal muscle hypertrophy: a systematic review with meta-analysis',
+    journal: 'Sports Med 53:649–65',
+    doi: '10.1007/s40279-022-01784-y',
+    pmid: '36334240',
+  },
+  helms2014: {
+    authors: 'Helms ER, Aragon AA, Fitschen PJ',
+    year: 2014,
+    title:
+      'Evidence-based recommendations for natural bodybuilding contest preparation: nutrition and supplementation',
+    journal: 'J Int Soc Sports Nutr 11:20',
+    doi: '10.1186/1550-2783-11-20',
+    pmid: '24864135',
+  },
 } as const satisfies Record<string, Citation>;
 
 export type CitationId = keyof typeof CITATIONS;
