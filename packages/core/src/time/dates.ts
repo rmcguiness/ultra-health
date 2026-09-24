@@ -101,6 +101,13 @@ export function daysBetween(from: LocalDate, to: LocalDate): number {
   return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / MS_PER_DAY);
 }
 
+/** ISO weekday of a calendar date: 1 = Monday … 7 = Sunday. */
+export function isoWeekday(date: LocalDate): number {
+  const [y, m, d] = parseLocalDate(date);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return weekday === 0 ? 7 : weekday;
+}
+
 /** Inclusive list of dates from `from` to `to`. */
 export function enumerateDates(from: LocalDate, to: LocalDate): LocalDate[] {
   const count = daysBetween(from, to);

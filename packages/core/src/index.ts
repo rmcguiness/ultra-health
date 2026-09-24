@@ -30,3 +30,5 @@ export * from './recommend/targets';
 export * from './insights/scorecard';
 export * from './training/planner';
 export * from './training/ramp';
+export * from './goals/goal';
+export * from './goals/progress';

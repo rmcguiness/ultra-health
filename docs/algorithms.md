@@ -49,6 +49,7 @@ The research brief behind it is [`research/adaptation-signals.html`](research/ad
 | Aerobic fitness trend & projection         | `fitness/aerobicTrend.ts`                          | B/C               | coyle1986, buchheit2014, caserman2024, sen1968                              |
 | Weight trend, forecast, water/tissue split | `body/weight.ts`, `stats/kalman.ts`                | A trend / C split | kalman1960, rauch1965, kreitzman1992, convertino1991, damas2016             |
 | Fat mass, lean mass, waist trends          | `body/bodyComposition.ts`                          | B / C noise       | demura2015, kreitzman1992, damas2016, ross2020                              |
+| Goal targets, three-level ladder           | `goals/goal.ts`, `goals/progress.ts`               | B / C ETA         | helms2014, garthe2011, iraki2019, morton2018, donnelly2009, nedeltcheva2010 |
 | Sleep Regularity Index                     | `sleep/regularity.ts`                              | A                 | phillips2017, windred2024                                                   |
 | Adaptation state                           | `insights/adaptationState.ts`                      | C                 | morton1990, meeusen2013, coyle1986                                          |
 | What worked for you                        | `insights/whatWorked.ts`                           | C                 | montero2017, barnett2005                                                    |
@@ -212,6 +213,60 @@ alert days showed reduced movement, as real sick days do.
   Waist reflects abdominal fat and adds to BMI in predicting health risk (ross2020).
 - Lean mass from a scale includes body water, so rises in the first weeks of new training
   are partly swelling (damas2016). Read lean-mass change over months, not weeks.
+
+### Goals and the three-level ladder
+
+`goals/goal.ts`, `goals/progress.ts`. The user picks a goal (lose fat, build muscle, both,
+get fitter, stay healthy), training days, session length and equipment. The goal decides what
+each level of the ladder reads and what the weekly plan prescribes.
+
+**Targets** (per goal, grade B):
+
+| Goal            | Weekly weight change                                                                                                                  | Protein, g/kg/day                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Lose fat        | −0.5 to −1% (helms2014; ~0.7% kept more lean mass than ~1.4%, garthe2011); pace sets the target: gentle −0.5, steady −0.75, faster −1 | 1.6–2.4 (morton2018, longland2016) |
+| Build muscle    | +0.25 to +0.5% for novice and intermediate lifters (iraki2019)                                                                        | 1.6–2.2 (morton2018, iraki2019)    |
+| Recomp          | none: weight can hold while fat falls and lean mass rises                                                                             | 1.6–2.2 (morton2018)               |
+| Fitness, health | none                                                                                                                                  | none                               |
+
+**Level 1 · Recovery (days)**: off on an illness alert or a "hold back" readiness; no data while
+readiness is learning; watch when sleep averages under 7 h (watson2015), and on fat goals the
+reason cites the 5.5 h vs 8.5 h trial where short sleep shifted loss from fat to lean mass
+(nedeltcheva2010); good otherwise.
+
+**Level 2 · Response (weeks)**: training days done against planned over the last 14 days since
+the goal started (a day counts with a strength session or a training session as in the
+maintenance check; today counts once done). ≥ 80% good, ≥ 50% watch, below that off; under 2
+planned days it waits. Body goals add the weekly weight rate from the real-time Kalman trend
+(slope ÷ level, with its 90% interval), needing ≥ 3 weigh-ins in 3 weeks: on pace inside the
+band; too fast beyond it (only when the interval excludes zero); too slow, flat or the wrong way
+turn the level to watch after 3 weeks. Fitness and health goals read the aerobic verdict
+instead (watch if slipping after 6 weeks).
+
+**Level 3 · Body (months)**: for fat mass, lean mass, waist and weight, the hindsight trend on
+the start day (or the first reading after it) against today, readable when the change clears
+the 90% interval of the difference; readings over 60 days old don't count. What each goal wants:
+lose fat → fat, waist, weight down and lean mass held; build muscle → lean mass and weight up;
+recomp → fat and waist down, lean mass up. A readable change the wrong way is watch (lean mass
+falling on a fat goal adds strength and protein advice: villareal2017, morton2018); a readable
+change the right way is good; otherwise it waits and estimates when a change at the planned pace
+will be readable: with reading noise σ, k readings a week and rate r, the least-squares change
+over T weeks has standard error σ·√(12/kT), so T = (1.645·σ·√(12/k)/|r|)^(2/3) (grade C).
+
+**What it means** (first match wins; "consistent with", never a diagnosis):
+
+1. Level 1 off → recovery first.
+2. Under 2 weeks in → settling in (no judgement).
+3. ≥ 4 planned days and under half done → a smaller plan beats a bigger one.
+4. Fat goal losing faster than the band → eat a little more, protein first (helms2014,
+   garthe2011); when level 1 is also slipping, say it is consistent with not eating enough
+   (mountjoy2018).
+5. Muscle goal gaining faster than the band → trim the surplus (iraki2019).
+6. Lean mass falling on a fat goal → protect muscle.
+7. On plan (≥ 80%) for 4+ weeks but weight flat, slow or the wrong way → the lever is food:
+   exercise alone brings only modest weight loss (donnelly2009); for muscle, a small surplus
+   and enough protein (iraki2019, morton2018).
+8. Body improving or rate on pace → on track. Otherwise keep going.
 
 ### Sleep Regularity Index
 

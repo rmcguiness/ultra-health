@@ -553,6 +553,14 @@ export const CITATIONS = {
     doi: '10.1007/s40279-022-01784-y',
     pmid: '36334240',
   },
+  iraki2019: {
+    authors: 'Iraki J, Fitschen P, Espinar S, Helms E',
+    year: 2019,
+    title: 'Nutrition recommendations for bodybuilders in the off-season: a narrative review',
+    journal: 'Sports (Basel) 7:154',
+    doi: '10.3390/sports7070154',
+    pmid: '31247944',
+  },
   helms2014: {
     authors: 'Helms ER, Aragon AA, Fitschen PJ',
     year: 2014,

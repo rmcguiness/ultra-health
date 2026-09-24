@@ -59,7 +59,7 @@ steep.
 
 ## Phase B · Goals and onboarding
 
-- [ ] **B1 Goal model** (`packages/core/src/goals/`). Goal kinds, experience, target rates
+- [x] **B1 Goal model** (`packages/core/src/goals/`). Goal kinds, experience, target rates
       (fat loss 0.5–1%/week, garthe2011 + helms2014), protein guide (morton2018,
       longland2016), and `goalProgress`: the three levels, a "readable in ~N weeks" estimate
       from the user's own measurement noise, and the diagnosis tree. Unit-tested.
