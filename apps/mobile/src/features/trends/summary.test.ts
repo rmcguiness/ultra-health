@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { addDays } from '@ultra-health/core';
+
 import { series, syntheticInputs as inputs, TO } from '@/testing/analytics';
 
 import { trendSummary } from './summary';
@@ -61,6 +63,45 @@ describe('trendSummary', () => {
     const fitness = rows.find((r) => r.id === 'fitness')!;
     expect(fitness.verdict).toBe('Improving');
     expect(fitness.note).toBe('Last 6 weeks: slipping');
+  });
+
+  it('groups rows by clock and splits weight into fat and lean mass', () => {
+    // A recomp over the last 120 days: fat falls 0.02 kg/day, lean rises 0.01.
+    const scale = Array.from({ length: 120 }, (_, k) => {
+      const i = 119 - k;
+      const date = addDays(TO, -i);
+      const startMs = Date.parse(`${date}T07:00:00`);
+      const fat = 20 - 0.02 * k;
+      const lean = 62 + 0.01 * k;
+      return {
+        weight: { date, hour: 7, startMs, value: fat + lean },
+        fat: { date, hour: 7, startMs, value: fat / (fat + lean) },
+      };
+    });
+    const rows = trendSummary(
+      {
+        ...inputs({ hrvNocturnal: series(() => 50, 3, 3) }),
+        body: {
+          weights: scale.map((s) => s.weight),
+          fatFractions: scale.map((s) => s.fat),
+          waist: [{ date: addDays(TO, -60), hour: 8, startMs: 0, value: 90 }],
+        },
+      },
+      TO,
+      91,
+    );
+    expect(rows.map((r) => r.level)).toEqual([
+      'recovery',
+      'fitness',
+      'fitness',
+      'body',
+      'body',
+      'body',
+      'body',
+    ]);
+    expect(rows.find((r) => r.id === 'fat_mass')).toMatchObject({ direction: 'down' });
+    expect(rows.find((r) => r.id === 'lean_mass')).toMatchObject({ direction: 'up' });
+    expect(rows.find((r) => r.id === 'waist')?.note).toBe('Last reading 9 weeks ago');
   });
 
   it('leaves out rows without data', () => {

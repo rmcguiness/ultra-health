@@ -1,4 +1,5 @@
 import {
+  bodyTrendParams,
   formatMetricDelta,
   formatMetricValue,
   isMetricId,
@@ -260,6 +261,14 @@ function ChartHeader({
       </View>
     );
   }
+  // Body measurements are goals, not vitals: say how the trend moved across
+  // the period rather than how the readings spread.
+  const first = model.trend[0];
+  const last = model.trend.at(-1);
+  const change =
+    metric.category === 'body_composition' && first && last && last.x > first.x
+      ? `Trend ${format(first.value)} → ${format(last.value)} ${unit} (${last.value >= first.value ? '+' : '−'}${formatMetricDelta(metric, Math.abs(last.value - first.value))})`
+      : undefined;
   return (
     <View style={styles.header}>
       <Text variant="footnote" tone="tertiary">
@@ -274,9 +283,10 @@ function ChartHeader({
         {summary ? <Text tone="secondary"> {unit}</Text> : null}
       </Text>
       <Text variant="caption" tone="secondary">
-        {summary
-          ? `${model.unit === 'week' ? 'Weekly averages' : 'Range'} ${format(summary.min)}–${format(summary.max)} ${unit}`
-          : ' '}
+        {change ??
+          (summary
+            ? `${model.unit === 'week' ? 'Weekly averages' : 'Range'} ${format(summary.min)}–${format(summary.max)} ${unit}`
+            : ' ')}
       </Text>
     </View>
   );
@@ -315,7 +325,7 @@ function Legend({
       {model.trend.length > 0 ? (
         <LegendItem
           swatch={<View style={styles.swatchLine} />}
-          label={metricId === 'body_mass' ? 'Trend (filtered)' : `${rangeTrendDays}-day average`}
+          label={bodyTrendParams(metricId) ? 'Trend (filtered)' : `${rangeTrendDays}-day average`}
         />
       ) : null}
       {hasGaps(model) ? (

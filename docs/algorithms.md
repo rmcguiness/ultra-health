@@ -346,13 +346,19 @@ no card carries method notes or source chips.
   recovery status and one alternative; the weekly checklist; the in-shape scorecard as tiles
   (each opens its pillar); the 4-week VO₂max and weight forecasts; what worked, once it has a
   pattern (a one-line note before that).
-- **Trends**: a plain summary for the range (cardio fitness, training load, HRV, weight), each
-  row opening its chart; training and recovery on one timeline (state ribbon, load with
+- **Trends**: a plain summary for the range grouped by clock (Recovery · days: HRV; Fitness ·
+  weeks: cardio fitness, training load; Body · months: weight, fat mass, lean mass, waist),
+  each row opening its chart. Body rows give direction only (good or bad depends on the goal)
+  and say when the last reading is over 3 weeks old. The load model's terms are shown as
+  training base (fitness), recent strain (fatigue) and freshness (form), so they never read as
+  cardio fitness; training and recovery on one timeline (state ribbon, load with
   fitness and fatigue, recovery vs normal) with one shared crosshair; the planner; sleep and
   the recovery compass as expandable rows that follow the selected day.
 - **Metric pages**: data-rich charts for D/W/M/3M/6M/Y/All with a trend overlay, dashed
   joins across missing days, the personal normal band on short ranges and tap or
-  press-and-drag inspection.
+  press-and-drag inspection. Body measurements (weight, body fat, lean mass, waist) draw the
+  Kalman trend with noise in their own unit (`bodyTrendParams`), skip the normal band (moving
+  away from your usual range can be the goal) and report the trend's change over the period.
 
 ### How lines are drawn
 

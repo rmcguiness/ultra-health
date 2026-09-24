@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   addDays,
+  bodyTrendParams,
   compareToBaseline,
   localDateKey,
   MS_PER_DAY,
@@ -189,9 +190,12 @@ export function useMetricChart(
         },
         sourceKind,
       );
+      const trendParams = bodyTrendParams(metric.id);
       const model = dailyChart(series.points, range, window, {
         cumulative: metric.dailyAggregation === 'sum',
-        kalmanTrend: metric.id === 'body_mass',
+        kalmanTrend: trendParams !== undefined,
+        trendParams,
+        band: metric.category !== 'body_composition',
         integers: integersFor(metric),
         display: displayOf(metric),
       });

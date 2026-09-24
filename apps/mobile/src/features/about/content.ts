@@ -427,25 +427,34 @@ const TRENDS: AboutContent = {
   title: 'Trend summary',
   facts: [],
   meaning: [
-    'Which way each part of your health has moved across the selected range. Tap a row to see its chart.',
-    'HRV and weight have no arrow color: HRV rising is not always good news, and whether weight should move depends on your goal.',
+    'Which way each part of your health has moved across the selected range, grouped by how fast it can change: recovery in days, fitness in weeks, body in months. Tap a row to see its chart.',
+    'HRV and the body rows have no arrow color: HRV rising is not always good news, and whether weight, fat or lean mass should move depends on your goal.',
   ],
   method: [
     'Cardio fitness and HRV use a robust trend (Theil–Sen) with a 90% interval, and count as moving only when the interval excludes zero and the change beats one reading’s noise, the same test as on Today.',
-    'Training load compares your fitness score (the 42-day load average) at each end of the range. Weight compares the Kalman trend at each end and calls it steady when the change is inside its uncertainty.',
+    'Training load compares your training base (the 42-day load average) at each end of the range. Weight, fat mass, lean mass and waist compare their Kalman trend at each end and call it steady when the change is inside its uncertainty.',
+    'Fat and lean mass come from your scale: each body-fat reading times the weight taken with it, mornings only once there are enough, because a scale’s body-fat estimate shifts with hydration.',
   ],
-  evidence: ['sen1968', 'hopkins2000', 'plews2013', 'morton1990', 'kalman1960', 'rauch1965'],
+  evidence: [
+    'sen1968',
+    'hopkins2000',
+    'plews2013',
+    'morton1990',
+    'kalman1960',
+    'rauch1965',
+    'demura2015',
+  ],
 };
 
 const TIMELINE: AboutContent = {
   title: 'Training and recovery',
   facts: [],
   meaning: [
-    'The ribbon is your training state each day. Below it, training load shows each workout as a bar, with fitness (slow to build, slow to fade) and fatigue (quick to build, quick to clear). Recovery shows HRV and resting heart rate against your normal range.',
+    'The ribbon is your training state each day. Below it, training load shows each workout as a bar, with your training base (slow to build, slow to fade) and recent strain (quick to build, quick to clear). Recovery shows HRV and resting heart rate against your normal range.',
     'Tap a day, or touch, hold and drag, to read every lane on the same day. Sleep and the recovery compass follow the day you pick.',
   ],
   method: [
-    'Workout load is TRIMP: minutes weighted by how high your heart rate was relative to your reserve. Fitness and fatigue are 42-day and 7-day weighted averages of that load; fitness minus fatigue is form.',
+    'Workout load is TRIMP: minutes weighted by how high your heart rate was relative to your reserve. Training base and recent strain (the model’s “fitness” and “fatigue”) are 42-day and 7-day weighted averages of that load; base minus strain is freshness (“form”). Training base is not cardio fitness: it measures the work you have done, while VO₂max and heart-rate markers measure what it did.',
     'Recovery lines are each day’s reading in standard deviations from your baseline, averaged over the 7 days centred on it, so a change is drawn on the days it happened; the shaded band is ±0.5, your normal. (Readiness each morning uses the 7 days up to that morning.) Lines join consecutive days with straight segments and never curve past the data.',
   ],
   evidence: ['morton1990', 'plews2013', 'plews2014', 'buchheit2014'],
@@ -455,12 +464,12 @@ const PLANNER: AboutContent = {
   title: 'What if…',
   facts: [],
   meaning: [
-    'Try a number of sessions a week and a session size, and see where your fitness would be in 4 weeks. It compares plans with each other; it does not promise a number.',
+    'Try a number of sessions a week and a session size, and see where your training base would be in 4 weeks. It compares plans with each other; it does not promise a number.',
   ],
   method: [
     'A training session is one with 10+ minutes at moderate effort or harder, the same bar as the maintenance check. Easier, typical and harder are the lower quarter, middle and upper quarter of your own training sessions’ loads over the last 90 days, so a plan uses sessions like the ones you already do.',
     'Walks and other light workouts are not sessions to plan around: their average daily load over the last 4 weeks carries on under every plan, as it does in real life.',
-    'The projection runs the same fitness–fatigue model as the timeline. Personal time constants are uncertain, so small differences between plans are not meaningful.',
+    'The projection runs the same training base and recent strain model (fitness–fatigue) as the timeline. Personal time constants are uncertain, so small differences between plans are not meaningful.',
     'A warning appears when the plan would raise load more than 30% over two weeks, a pace linked to more overuse injuries in novice runners.',
   ],
   evidence: ['morton1990', 'hellard2006', 'nielsen2014'],

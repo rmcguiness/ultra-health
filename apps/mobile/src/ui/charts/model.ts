@@ -7,6 +7,7 @@ import {
   valuesBetween,
   weightTrend,
   type LocalDate,
+  type WeightModelParams,
 } from '@ultra-health/core';
 
 // Pure chart model: which window a range shows, where points and ticks sit,
@@ -339,6 +340,13 @@ export function dailyChart(
   options: {
     readonly cumulative: boolean;
     readonly kalmanTrend: boolean;
+    /** Noise settings for the Kalman trend, in the metric's unit (default: weight's). */
+    readonly trendParams?: WeightModelParams;
+    /**
+     * The "your normal" band. Off for goal metrics (body composition), where
+     * moving away from your usual range can be the point.
+     */
+    readonly band?: boolean;
     readonly integers?: boolean;
     readonly display?: { readonly scale: number; readonly offset: number };
   },
@@ -389,7 +397,11 @@ export function dailyChart(
     const last = weights.at(-1)?.date;
     const t =
       first && last
-        ? weightTrend(weights, { from: first, to: last > window.to ? last : window.to })
+        ? weightTrend(
+            weights,
+            { from: first, to: last > window.to ? last : window.to },
+            options.trendParams,
+          )
         : undefined;
     trend = (t?.smoothed ?? [])
       .filter((p) => p.date >= window.from && p.date <= window.to)
@@ -404,7 +416,7 @@ export function dailyChart(
   }
 
   let band: Band | undefined;
-  if (range.showBand) {
+  if (range.showBand && options.band !== false) {
     const series = toDense(data, addDays(window.to, -66), window.to);
     const base = valuesBetween(series, addDays(window.to, -66), addDays(window.to, -7));
     const center = base.length >= 14 ? robustCenter(base) : undefined;

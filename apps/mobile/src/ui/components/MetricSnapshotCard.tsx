@@ -1,4 +1,10 @@
-import { addDays, formatMetricValue, METRICS, type MetricId } from '@ultra-health/core';
+import {
+  addDays,
+  bodyTrendParams,
+  formatMetricValue,
+  METRICS,
+  type MetricId,
+} from '@ultra-health/core';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -44,7 +50,9 @@ export function MetricSnapshotCard({ metricId }: { metricId: MetricId }) {
             { from: addDays(to, -66), to },
             {
               cumulative: metric.dailyAggregation === 'sum',
-              kalmanTrend: metricId === 'body_mass',
+              kalmanTrend: bodyTrendParams(metricId) !== undefined,
+              trendParams: bodyTrendParams(metricId),
+              band: metric.category !== 'body_composition',
               integers: integersFor(metric),
               display: displayOf(metric),
             },

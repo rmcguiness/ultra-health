@@ -1,6 +1,8 @@
 import {
   addDays,
   aerobicTrend,
+  bodyCompositionTrends,
+  daysBetween,
   fitnessFatigue,
   formatMetricDelta,
   mapDense,
@@ -11,7 +13,9 @@ import {
   type CitationId,
   type FitnessMarker,
   type LocalDate,
+  type MetricDefinition,
   type MetricId,
+  type WeightTrend,
 } from '@ultra-health/core';
 
 import type { AnalyticsInputs } from '@/analytics/inputs';
@@ -20,11 +24,22 @@ import type { AnalyticsInputs } from '@/analytics/inputs';
 // uses the same test as the fitness verdict on Today: a robust slope whose
 // interval excludes zero and whose change beats one reading's noise.
 
-export type SummaryRowId = 'fitness' | 'load' | 'hrv' | 'weight';
+export type SummaryRowId =
+  'fitness' | 'load' | 'hrv' | 'weight' | 'fat_mass' | 'lean_mass' | 'waist';
 export type Direction = 'up' | 'down' | 'flat';
+
+/** The three clocks: what can have changed by now (see docs/algorithms.md). */
+export type SummaryLevel = 'recovery' | 'fitness' | 'body';
+
+export const SUMMARY_LEVELS: readonly { readonly id: SummaryLevel; readonly title: string }[] = [
+  { id: 'recovery', title: 'Recovery · days' },
+  { id: 'fitness', title: 'Fitness · weeks' },
+  { id: 'body', title: 'Body · months' },
+];
 
 export interface SummaryRow {
   readonly id: SummaryRowId;
+  readonly level: SummaryLevel;
   readonly label: string;
   readonly direction: Direction | undefined;
   /** "Improving", "Up 21%", "Steady". */
@@ -108,6 +123,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
   const noteTone = note ? AEROBIC[recent.verdict].tone : undefined;
   rows.push({
     id: 'fitness',
+    level: 'fitness',
     label: 'Cardio fitness',
     direction: a.direction,
     verdict: a.verdict,
@@ -145,6 +161,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
             : 'flat';
     rows.push({
       id: 'load',
+      level: 'fitness',
       label: 'Training load',
       direction,
       verdict:
@@ -155,7 +172,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
               ? 'Up'
               : 'Down'
             : `${direction === 'up' ? 'Up' : 'Down'} ${Math.round(Math.abs(pct) * 100)}%`,
-      detail: `Fitness score ${Math.round(start)} → ${Math.round(end)}`,
+      detail: `Training base ${Math.round(start)} → ${Math.round(end)}`,
       tone: 'secondary',
       metric: undefined,
       evidence: ['morton1990'],
@@ -171,6 +188,7 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
       const pct = Math.exp(t.change) - 1;
       rows.push({
         id: 'hrv',
+        level: 'recovery',
         label: 'HRV',
         direction: t.direction === 'rising' ? 'up' : t.direction === 'falling' ? 'down' : 'flat',
         verdict:
@@ -186,36 +204,82 @@ export function trendSummary(inputs: AnalyticsInputs, to: LocalDate, days: numbe
     }
   }
 
-  // Weight: the smoothed trend at each end, with its uncertainty.
+  // Body: each smoothed trend at both ends of the range, with its uncertainty.
   const weights = inputs.weights.filter((w) => w.date <= to);
   const first = weights[0]?.date;
-  if (first && weights.some((w) => w.date >= from)) {
-    const trend = weightTrend(weights, { from: first, to });
-    const a0 = trend?.smoothed.find((p) => p.date === (first > from ? first : from));
-    const a1 = trend?.smoothed.find((p) => p.date === to);
-    if (a0 && a1) {
-      const change = a1.level - a0.level;
-      // 90% interval of the difference, treating the two ends as independent
-      // (conservative: neighbouring smoothed states are positively correlated).
-      const noise = 1.645 * Math.hypot(a0.levelSd, a1.levelSd);
-      const direction: Direction = Math.abs(change) <= noise ? 'flat' : change > 0 ? 'up' : 'down';
-      const unit = METRICS.body_mass.display.unit;
-      const perWeek = a1.slopePerDay * 7;
-      const delta = (v: number) => formatMetricDelta(METRICS.body_mass, Math.abs(v));
-      rows.push({
-        id: 'weight',
-        label: 'Weight',
-        direction,
-        verdict:
-          direction === 'flat'
-            ? 'Steady'
-            : `${direction === 'up' ? 'Up' : 'Down'} ${delta(change)} ${unit}`,
-        detail: `${perWeek > 0 ? '+' : perWeek < 0 ? '−' : ''}${delta(perWeek)} ${unit} a week lately`,
-        tone: 'secondary',
-        metric: 'body_mass',
-        evidence: ['kalman1960', 'rauch1965'],
-      });
-    }
+  const weight = first ? weightTrend(weights, { from: first, to }) : undefined;
+  const body = bodyCompositionTrends({ ...inputs.body, range: { from: inputs.range.from, to } });
+  const mass = METRICS.body_mass;
+  for (const row of [
+    bodyRow('weight', 'Weight', weight, from, to, mass, 'body_mass', 7),
+    bodyRow('fat_mass', 'Fat mass', body.fatMass, from, to, mass, 'body_fat_percentage', 7),
+    bodyRow('lean_mass', 'Lean mass', body.leanMass, from, to, mass, 'lean_body_mass', 7),
+    bodyRow(
+      'waist',
+      'Waist',
+      body.waist,
+      from,
+      to,
+      METRICS.waist_circumference,
+      'waist_circumference',
+      30,
+    ),
+  ]) {
+    if (row) rows.push(row);
   }
-  return rows;
+  const order = SUMMARY_LEVELS.map((l) => l.id);
+  return rows.sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level));
+}
+
+/** A reading older than this makes "lately" stale, so the row says when it was. */
+const STALE_DAYS = 21;
+
+/**
+ * Change across the range from a Kalman trend's smoothed ends. The 90%
+ * interval treats the two ends as independent (conservative: neighbouring
+ * smoothed states are positively correlated). Direction only: whether up or
+ * down is good depends on the goal.
+ */
+function bodyRow(
+  id: SummaryRowId,
+  label: string,
+  trend: WeightTrend | undefined,
+  from: LocalDate,
+  to: LocalDate,
+  unitOf: MetricDefinition,
+  metric: MetricId,
+  rateDays: 7 | 30,
+): SummaryRow | undefined {
+  if (!trend) return undefined;
+  const observed = trend.smoothed.filter((p) => p.observed !== null);
+  const firstSeen = observed[0]?.date;
+  const lastSeen = observed.at(-1)?.date;
+  if (!firstSeen || !lastSeen || lastSeen < from) return undefined;
+  const a0 = trend.smoothed.find((p) => p.date === (firstSeen > from ? firstSeen : from));
+  const a1 = trend.smoothed.find((p) => p.date === to);
+  if (!a0 || !a1) return undefined;
+  const change = a1.level - a0.level;
+  const noise = 1.645 * Math.hypot(a0.levelSd, a1.levelSd);
+  const direction: Direction = Math.abs(change) <= noise ? 'flat' : change > 0 ? 'up' : 'down';
+  const unit = unitOf.display.unit;
+  const delta = (v: number) => formatMetricDelta(unitOf, Math.abs(v));
+  const rate = a1.slopePerDay * rateDays;
+  const sign = rate > 0 ? '+' : rate < 0 ? '−' : '';
+  const age = daysBetween(lastSeen, to);
+  return {
+    id,
+    level: 'body',
+    label,
+    direction,
+    verdict:
+      direction === 'flat'
+        ? 'Steady'
+        : `${direction === 'up' ? 'Up' : 'Down'} ${delta(change)} ${unit}`,
+    detail: `${sign}${delta(rate)} ${unit} a ${rateDays === 7 ? 'week' : 'month'} lately`,
+    note: age > STALE_DAYS ? `Last reading ${Math.round(age / 7)} weeks ago` : undefined,
+    noteTone: age > STALE_DAYS ? 'secondary' : undefined,
+    tone: 'secondary',
+    metric,
+    evidence: trend.evidence,
+  };
 }

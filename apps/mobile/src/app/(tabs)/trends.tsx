@@ -13,7 +13,7 @@ import { useTimeline } from '@/features/analytics';
 import { readinessView, STATE_COPY } from '@/features/today/copy';
 import { barcode, timelineModel } from '@/features/trends/model';
 import { PlannerCard } from '@/features/trends/PlannerCard';
-import { trendSummary, type SummaryRow } from '@/features/trends/summary';
+import { SUMMARY_LEVELS, trendSummary, type SummaryRow } from '@/features/trends/summary';
 import { formatDay } from '@/ui/charts/model';
 import { Compass, type CompassPoint } from '@/ui/charts/Compass';
 import { SleepBarcode } from '@/ui/charts/SleepBarcode';
@@ -141,9 +141,19 @@ export default function Trends() {
           <Card>
             <View style={styles.stack}>
               <CardHeader title={range.title} topic="trends" />
-              {summary.map((row, i) => (
-                <SummaryLine key={row.id} row={row} first={i === 0} />
-              ))}
+              {SUMMARY_LEVELS.map((level) => {
+                const rows = summary.filter((r) => r.level === level.id);
+                return rows.length > 0 ? (
+                  <View key={level.id} style={styles.level}>
+                    <Text variant="footnote" tone="tertiary">
+                      {level.title.toUpperCase()}
+                    </Text>
+                    {rows.map((row, i) => (
+                      <SummaryLine key={row.id} row={row} first={i === 0} />
+                    ))}
+                  </View>
+                ) : null;
+              })}
             </View>
           </Card>
 
@@ -235,6 +245,7 @@ const styles = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radii.sm },
   segmentActive: { backgroundColor: colors.surfaceRaised },
   stack: { gap: spacing.sm },
+  level: { marginTop: spacing.xs },
   flex: { flex: 1 },
   pressed: { opacity: 0.6 },
   line: {

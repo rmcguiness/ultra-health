@@ -1,6 +1,8 @@
 import type { CitationId } from '../evidence/citations';
+import type { MetricId } from '../metrics/types';
 import type { LocalDate } from '../time/dates';
 import {
+  DEFAULT_WEIGHT_PARAMS,
   fitWeightParams,
   selectDailyWeighIns,
   weightTrend,
@@ -45,6 +47,32 @@ const SCALE_MASS_GRID: ParamGrid = {
  * too sparse to refit.
  */
 export const WAIST_PARAMS: WeightModelParams = { obsSd: 1.0, levelSd: 0.05, slopeSd: 0.003 };
+
+/** Body fat as a fraction: the scale-mass noise above as a share of about 80 kg. */
+export const SCALE_FRACTION_PARAMS: WeightModelParams = {
+  obsSd: 0.01,
+  levelSd: 0.0004,
+  slopeSd: 0.000025,
+};
+
+/**
+ * Trend settings for a body-measurement chart, in the metric's stored unit;
+ * undefined for metrics drawn with a moving average instead.
+ */
+export function bodyTrendParams(metric: MetricId): WeightModelParams | undefined {
+  switch (metric) {
+    case 'body_mass':
+      return DEFAULT_WEIGHT_PARAMS;
+    case 'lean_body_mass':
+      return SCALE_MASS_PARAMS;
+    case 'body_fat_percentage':
+      return SCALE_FRACTION_PARAMS;
+    case 'waist_circumference':
+      return WAIST_PARAMS;
+    default:
+      return undefined;
+  }
+}
 
 /** A scale writes weight and body fat for one step onto it within seconds. */
 const PAIR_TOLERANCE_MS = 10 * 60_000;

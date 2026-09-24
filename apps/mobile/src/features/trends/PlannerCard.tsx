@@ -125,15 +125,15 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
 
         <ProjectionChart history={points.slice(-28)} projection={outcome.projection} />
         <View style={styles.keys}>
-          <Key color={series.one} label="Fitness" />
-          <Key color={series.two} label="Fatigue" />
+          <Key color={series.one} label="Training base" />
+          <Key color={series.two} label="Recent strain" />
           <Text variant="footnote" tone="tertiary">
             dashed = projected
           </Text>
         </View>
 
         <Text variant="body">
-          Fitness in 4 weeks: {Math.round(last.fitness)} →{' '}
+          Training base in 4 weeks: {Math.round(last.fitness)} →{' '}
           {Math.round(last.fitness + outcome.fitnessChange)}
           {pct !== undefined ? ` (${pct >= 0 ? '+' : '−'}${Math.round(Math.abs(pct) * 100)}%)` : ''}
           , ending {formLabel}.
@@ -142,8 +142,8 @@ export function PlannerCard({ inputs }: { inputs: AnalyticsInputs }) {
           <Pill glyph="!" label="Load rises more than 30% in two weeks" tone="warning" />
         ) : null}
         <Text variant="caption" tone="secondary">
-          To hold your fitness: about {hold.toFixed(1)} typical sessions a week. To build it 10% in
-          4 weeks: about {build.toFixed(1)}.
+          To hold your training base: about {hold.toFixed(1)} typical sessions a week. To build it
+          10% in 4 weeks: about {build.toFixed(1)}.
         </Text>
       </View>
     </Card>

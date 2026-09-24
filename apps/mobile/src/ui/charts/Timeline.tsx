@@ -265,8 +265,8 @@ const LoadLane = memo(function LoadLane({
         empty ? undefined : (
           <View style={styles.keys}>
             <Key color={colors.textTertiary} label="Workout" kind="bar" />
-            <Key color={series.one} label="Fitness" />
-            <Key color={series.two} label="Fatigue" />
+            <Key color={series.one} label="Training base" />
+            <Key color={series.two} label="Recent strain" />
           </View>
         )
       }

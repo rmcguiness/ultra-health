@@ -49,11 +49,11 @@ steep.
       (weight × body fat) and lean mass in kg from the same scale on the same morning, each
       through the Kalman trend with body-composition noise defaults (fitted once ≥ 40
       readings). Morning readings preferred (BIA moves with hydration). Exposed on `Outlook`.
-- [ ] **A4 Trends grouped by level.** Summary rows under Recovery · days / Fitness · weeks /
+- [x] **A4 Trends grouped by level.** Summary rows under Recovery · days / Fitness · weeks /
       Body · months; new rows for fat mass, lean mass, waist. Banister terms renamed so they
       stop colliding with cardio fitness: Fitness → Training base, Fatigue → Recent strain,
       Form → Freshness.
-- [ ] **A5 Metric page for goal metrics.** Body fat, lean mass and weight use the Kalman
+- [x] **A5 Metric page for goal metrics.** Body fat, lean mass and weight use the Kalman
       trend line; body-composition metrics show change over the window instead of "below your
       normal".
 
