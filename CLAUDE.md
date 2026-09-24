@@ -3,6 +3,10 @@
 pnpm monorepo: `apps/mobile` (Expo SDK 57, iOS) + `packages/core` (pure TS domain logic).
 See README.md for architecture. Expo-specific guidance: `apps/mobile/AGENTS.md`.
 
+**Active work:** `docs/plan.md` is the step-by-step plan for goal coaching (body composition,
+onboarding, a planned week). Read it first, continue with the first unticked step, and tick
+it in the commit that finishes it.
+
 ## Commands
 
 - `pnpm check`: prettier, typecheck, lint, tests (run before calling work done)
