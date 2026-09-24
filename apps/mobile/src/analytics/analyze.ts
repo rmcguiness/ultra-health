@@ -4,6 +4,7 @@ import {
   addDays,
   aerobicTrend,
   blockFeatures,
+  bodyCompositionTrends,
   createIllnessWatcher,
   deviationOn,
   enumerateDates,
@@ -38,6 +39,7 @@ import {
   type ActivityWeek,
   type AdaptationState,
   type AerobicTrend,
+  type BodyCompositionTrends,
   type CompositionModel,
   type DenseSeries,
   type DetrainingOutlook,
@@ -249,6 +251,8 @@ export interface Outlook {
   readonly weight: WeightTrend | undefined;
   readonly weightForecast: readonly WeightForecast[];
   readonly composition: CompositionModel | undefined;
+  /** Level 3: fat mass, lean mass and waist trends. */
+  readonly body: BodyCompositionTrends;
   readonly sleepRegularity: SleepRegularity | undefined;
   readonly whatWorked: WhatWorked;
   readonly detraining: DetrainingOutlook | undefined;
@@ -413,6 +417,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     weight,
     weightForecast: weight ? forecastWeight(weight, 28) : [],
     composition,
+    body: bodyCompositionTrends({ ...inputs.body, range: weightRange }),
     sleepRegularity,
     whatWorked: whatWorked(blocks, current),
     vo2Projection:

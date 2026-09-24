@@ -451,6 +451,9 @@ describe.skipIf(!existsSync(EXPORT))('back-test on the Apple Health export', () 
       `  water/tissue decomposition: ${o.composition ? (o.composition.validated ? 'validated' : `not validated (RMSE ${f(o.composition.oneStepRmse)} vs trend ${f(o.composition.baselineRmse)}, ${o.composition.observedDays} weigh-ins; gate needs ≥60 and a 2% gain)`) : 'no data'}`,
     );
     say(
+      `  body composition: ${o.body.scaleDays} scale days with body fat (${o.body.morningDays} mornings; ${o.body.morningOnly ? 'mornings only' : 'all times'}), one-step RMSE fat ${f(o.body.fatMass?.oneStepRmse)} kg, lean ${f(o.body.leanMass?.oneStepRmse)} kg; waist ${o.body.waistDays} days`,
+    );
+    say(
       `  sleep regularity (28 d): ${o.sleepRegularity ? `${f(o.sleepRegularity.sri, 0)} over ${o.sleepRegularity.dayPairs} day pairs` : 'n/a'}`,
     );
     say(

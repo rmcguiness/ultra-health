@@ -18,6 +18,7 @@ export * from './training/fitnessFatigue';
 export * from './training/guidelines';
 export * from './training/detraining';
 export * from './body/weight';
+export * from './body/bodyComposition';
 export * from './recovery/deviation';
 export * from './recovery/readiness';
 export * from './recovery/illness';

@@ -45,7 +45,7 @@ steep.
       Tests for both. Back-test shows the Wyze weigh-ins.
 - [x] **A2 Waist circumference.** Catalog entry (`waist_circumference`, HealthKit
       `WaistCircumference`, stored cm, shown in inches), read permission, Data tab.
-- [ ] **A3 Fat mass and lean mass trends.** `packages/core/src/body/composition.ts`: fat mass
+- [x] **A3 Fat mass and lean mass trends.** `packages/core/src/body/composition.ts`: fat mass
       (weight × body fat) and lean mass in kg from the same scale on the same morning, each
       through the Kalman trend with body-composition noise defaults (fitted once ≥ 40
       readings). Morning readings preferred (BIA moves with hydration). Exposed on `Outlook`.
@@ -130,3 +130,5 @@ backtest`, then `SIM_DEVICE=<udid> pnpm --filter @ultra-health/mobile sim:snapsh
   real export (1 of 83 weigh-in days visible to the analysis).
 - 2026-09-24: A1 done. The back-test now reads 83 weigh-in days (was 1); the water/tissue
   split passes its gate on this export.
+- 2026-09-24: A2, A3 done. Back-test: 79 scale days with body fat, 51 mornings (trends use
+  mornings only).

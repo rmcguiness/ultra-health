@@ -49,6 +49,7 @@ export function syntheticInputs(
           standardized: true,
         }))
       : [],
+    body: { weights: [], fatFractions: [], waist: [] },
     asleep: [],
     sleepDates: [],
     coverage: {

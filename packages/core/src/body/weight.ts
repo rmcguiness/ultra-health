@@ -219,24 +219,39 @@ export function forecastWeight(trend: WeightTrend, days: number, z = 1.645): Wei
   return out;
 }
 
+/** Candidate values for `fitWeightParams`, in the series' own unit. */
+export interface ParamGrid {
+  readonly obsSd: readonly number[];
+  readonly levelSd: readonly number[];
+  readonly slopeSd: readonly number[];
+}
+
+export const WEIGHT_PARAM_GRID: ParamGrid = {
+  obsSd: [0.2, 0.3, 0.4, 0.5, 0.6, 0.8],
+  levelSd: [0.01, 0.02, 0.04, 0.08, 0.16],
+  slopeSd: [0.0005, 0.001, 0.002, 0.004, 0.008],
+};
+
 /**
  * Maximum-likelihood noise parameters on a coarse grid. Needs enough
  * weigh-ins to separate reading noise from real drift; with fewer, the
- * literature-based defaults are returned unchanged.
+ * defaults are returned unchanged.
  */
 export function fitWeightParams(
   weights: readonly DailyWeight[],
   range: { readonly from: LocalDate; readonly to: LocalDate },
   minObservations = 40,
+  grid: ParamGrid = WEIGHT_PARAM_GRID,
+  defaults: WeightModelParams = DEFAULT_WEIGHT_PARAMS,
 ): { params: WeightModelParams; fitted: boolean } {
   const inRange = weights.filter((w) => w.date >= range.from && w.date <= range.to);
-  if (inRange.length < minObservations) return { params: DEFAULT_WEIGHT_PARAMS, fitted: false };
+  if (inRange.length < minObservations) return { params: defaults, fitted: false };
   const y = denseKg(inRange, range.from, range.to);
 
-  let best = { params: DEFAULT_WEIGHT_PARAMS, ll: -Infinity };
-  for (const obsSd of [0.2, 0.3, 0.4, 0.5, 0.6, 0.8]) {
-    for (const levelSd of [0.01, 0.02, 0.04, 0.08, 0.16]) {
-      for (const slopeSd of [0.0005, 0.001, 0.002, 0.004, 0.008]) {
+  let best = { params: defaults, ll: -Infinity };
+  for (const obsSd of grid.obsSd) {
+    for (const levelSd of grid.levelSd) {
+      for (const slopeSd of grid.slopeSd) {
         const params = { obsSd, levelSd, slopeSd };
         const ll = kalmanFilter(
           localLinearTrendModel(inRange[0]!.kg, params),

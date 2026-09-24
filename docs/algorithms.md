@@ -48,6 +48,7 @@ The research brief behind it is [`research/adaptation-signals.html`](research/ad
 | Maintenance minimum & detraining outlook   | `training/guidelines.ts`, `training/detraining.ts` | B                 | spiering2021, hickson1985, coyle1984, coyle1986                             |
 | Aerobic fitness trend & projection         | `fitness/aerobicTrend.ts`                          | B/C               | coyle1986, buchheit2014, caserman2024, sen1968                              |
 | Weight trend, forecast, water/tissue split | `body/weight.ts`, `stats/kalman.ts`                | A trend / C split | kalman1960, rauch1965, kreitzman1992, convertino1991, damas2016             |
+| Fat mass, lean mass, waist trends          | `body/bodyComposition.ts`                          | B / C noise       | demura2015, kreitzman1992, damas2016, ross2020                              |
 | Sleep Regularity Index                     | `sleep/regularity.ts`                              | A                 | phillips2017, windred2024                                                   |
 | Adaptation state                           | `insights/adaptationState.ts`                      | C                 | morton1990, meeusen2013, coyle1986                                          |
 | What worked for you                        | `insights/whatWorked.ts`                           | C                 | montero2017, barnett2005                                                    |
@@ -191,6 +192,26 @@ alert days showed reduced movement, as real sick days do.
   convertino1991/kreitzman1992; new-load swelling, damas2016).
   **Gate**: shown as more than a sketch only with ≥ 60 weigh-ins and ≥ 2% lower out-of-sample
   one-step error than the plain trend.
+
+### Body composition (level 3)
+
+`body/bodyComposition.ts`, grade B for the method, C for the starting noise values.
+
+- **Fat mass and lean mass in kg**, because body fat % can fall while fat mass stays the
+  same (lean mass rose). Each body-fat reading pairs with the weight the same scale took
+  within 10 minutes: fat = weight × body fat, lean = weight − fat. Unpaired readings are
+  dropped. Both come from the body-fat series' source kind, so they never blend devices.
+- **Mornings only** once there are ≥ 10 morning days (04:00–11:59) in the range: a scale's
+  body-fat estimate (bioelectrical impedance) shifts with hydration and differs between
+  devices (demura2015), and weight itself moves with food and fluid through the day
+  (kreitzman1992). Mixing times of day would put the clock into the trend.
+- **Trend**: the same local linear trend Kalman model as weight (kalman1960, rauch1965).
+  Starting noise 0.8 kg per reading, refitted by maximum likelihood once ≥ 40 readings exist
+  (on a grid reaching 1.5 kg, since scale body fat scatters more than weight).
+- **Waist** (cm, tape): the same model with 1 cm reading noise, not refitted (too sparse).
+  Waist reflects abdominal fat and adds to BMI in predicting health risk (ross2020).
+- Lean mass from a scale includes body water, so rises in the first weeks of new training
+  are partly swelling (damas2016). Read lean-mass change over months, not weeks.
 
 ### Sleep Regularity Index
 

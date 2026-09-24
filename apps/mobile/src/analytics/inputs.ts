@@ -20,10 +20,12 @@ import {
   type LocalDate,
   type MaxHrEstimate,
   type MetricDefinition,
+  type SourceKind,
+  type TimedReading,
   type TrainingSession,
 } from '@ultra-health/core';
 
-import { getSamples, getWorkouts, type WorkoutRow } from '@/db/analyticsQueries';
+import { getSamples, getWorkouts, type SampleRow, type WorkoutRow } from '@/db/analyticsQueries';
 import { getDailySeries, getSleepNights, primarySourceKind, type DateRange } from '@/db/queries';
 import type { SqlDatabase } from '@/db/sql';
 
@@ -60,6 +62,15 @@ export interface AnalyticsInputs {
   readonly sessions: readonly TrainingSession[];
   readonly dailyLoad: readonly DailyLoad[];
   readonly weights: readonly DailyWeight[];
+  /**
+   * Level-3 readings. `weights` come from the same source as `fatFractions`
+   * so each body-fat reading pairs with the weight taken with it.
+   */
+  readonly body: {
+    readonly weights: readonly TimedReading[];
+    readonly fatFractions: readonly TimedReading[];
+    readonly waist: readonly TimedReading[];
+  };
   readonly asleep: readonly AsleepInterval[];
   readonly sleepDates: readonly LocalDate[];
   readonly coverage: {
@@ -69,6 +80,15 @@ export interface AnalyticsInputs {
     readonly loadFromAverage: number;
     readonly loadMissing: number;
   };
+}
+
+function timed(rows: readonly SampleRow[]): TimedReading[] {
+  return rows.map((r) => ({
+    date: localDateKey(r.startMs),
+    hour: new Date(r.startMs).getHours(),
+    startMs: r.startMs,
+    value: r.value,
+  }));
 }
 
 function ageOn(birthDate: string | undefined, date: LocalDate): number | undefined {
@@ -244,16 +264,28 @@ export async function loadAnalyticsInputs(
   }
 
   // One standardized weigh-in per day, from the preferred scale source.
-  const weightKind = await primarySourceKind(db, METRICS.body_mass, range);
-  const weightRows = weightKind
-    ? await getSamples(
-        db,
-        METRICS.body_mass,
-        weightKind,
-        startOfLocalDate(range.from),
-        startOfLocalDate(range.to) + MS_PER_DAY,
-      )
-    : [];
+  const samplesIn = (metric: MetricDefinition, kind: SourceKind | undefined) =>
+    kind
+      ? getSamples(
+          db,
+          metric,
+          kind,
+          startOfLocalDate(range.from),
+          startOfLocalDate(range.to) + MS_PER_DAY,
+        )
+      : Promise.resolve([]);
+  const [weightKind, fatKind, waistKind] = await Promise.all([
+    primarySourceKind(db, METRICS.body_mass, range),
+    primarySourceKind(db, METRICS.body_fat_percentage, range),
+    primarySourceKind(db, METRICS.waist_circumference, range),
+  ]);
+  const [weightRows, fatRows, waistRows] = await Promise.all([
+    samplesIn(METRICS.body_mass, weightKind),
+    samplesIn(METRICS.body_fat_percentage, fatKind),
+    samplesIn(METRICS.waist_circumference, waistKind),
+  ]);
+  const fatWeightRows =
+    fatKind === weightKind ? weightRows : await samplesIn(METRICS.body_mass, fatKind);
   const weights = selectDailyWeighIns(
     weightRows.map((r) => ({
       date: localDateKey(r.startMs),
@@ -284,6 +316,11 @@ export async function loadAnalyticsInputs(
     sessions,
     dailyLoad: [...loadByDate].map(([date, load]) => ({ date, load })),
     weights,
+    body: {
+      weights: timed(fatWeightRows),
+      fatFractions: timed(fatRows),
+      waist: timed(waistRows),
+    },
     asleep,
     sleepDates: nights.map((n) => n.date),
     coverage: {
