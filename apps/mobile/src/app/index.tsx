@@ -31,7 +31,7 @@ export default function Index() {
       </View>
     );
   }
-  return <Redirect href={access === 'ready' ? '/overview' : '/connect'} />;
+  return <Redirect href={access === 'ready' ? '/today' : '/connect'} />;
 }
 
 const styles = StyleSheet.create({

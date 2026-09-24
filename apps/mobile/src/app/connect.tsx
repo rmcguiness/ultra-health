@@ -33,7 +33,7 @@ export default function Connect() {
       await health.requestReadAuthorization(await health.supportedMetrics(ALL_METRICS));
       await queryClient.invalidateQueries({ queryKey: ['health-access'] });
       void sync();
-      router.replace('/overview');
+      router.replace('/today');
     } catch (e) {
       logger.error('connect.failed', { message: String(e) });
       setError(e instanceof Error ? e.message : String(e));

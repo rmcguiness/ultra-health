@@ -154,18 +154,21 @@ export interface Outlook {
   readonly detraining: DetrainingOutlook | undefined;
 }
 
-function weeksBelowMaintenance(inputs: AnalyticsInputs, date: LocalDate): number {
-  let weeks = 0;
+/**
+ * Consecutive weeks (ending yesterday) below the maintenance minimum, or
+ * undefined when no week in the last six months met it: someone who never
+ * trained at that level has nothing to detrain from.
+ */
+function weeksBelowMaintenance(inputs: AnalyticsInputs, date: LocalDate): number | undefined {
   for (let k = 0; k < 26; k++) {
     const end = addDays(date, -1 - 7 * k);
     if (
       maintenanceCheck(activityWeek(inputs.sessions, end, inputs.series.exerciseMinutes)).endurance
     ) {
-      break;
+      return k;
     }
-    weeks++;
   }
-  return weeks;
+  return undefined;
 }
 
 /** The full picture for `date`: today plus trends, forecasts and patterns. */
@@ -189,7 +192,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     week: day.week,
     dailyTrimp: load.filter((p) => p.date > addDays(date, -29) && p.date <= date),
     aerobic,
-    weeksBelowMaintenance: below,
+    weeksBelowMaintenance: below ?? 0,
   });
 
   const weightRange = { from: inputs.range.from, to: date };
@@ -246,7 +249,7 @@ export function outlook(inputs: AnalyticsInputs, date: LocalDate): Outlook {
     sleepRegularity,
     whatWorked: whatWorked(blocks, current),
     detraining:
-      below >= 2
+      below !== undefined && below >= 2
         ? detrainingOutlook({ daysBelowMaintenance: below * 7, vo2max: latestVo2 ?? undefined })
         : undefined,
   };

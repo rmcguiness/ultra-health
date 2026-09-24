@@ -118,7 +118,7 @@ export function planToday(inputs: TodayInputs): TodayPlan {
   if (strengthDue) {
     candidates.push('strength');
     reasons.push({
-      text: `You've done strength training on ${week.strengthDays} of the last 7 days. The guideline is 2 or more, with 48 hours between sessions for the same muscles.`,
+      text: `You've done strength training on ${week.strengthDays} of the last 7 days. The guideline is 2 or more days a week, with 48 hours between sessions for the same muscles.`,
       evidence: ['bull2020', 'garber2011'],
     });
   }
@@ -193,7 +193,7 @@ export function weeklyInsights(inputs: WeeklyInputs): WeeklyInsight[] {
   if (!week.meetsStrength) {
     out.push({
       id: 'strength_gap',
-      text: `Strength training on ${WHO_STRENGTH_DAYS - week.strengthDays} more day(s) would meet the muscle-strengthening guideline.`,
+      text: `Strength training on ${WHO_STRENGTH_DAYS - week.strengthDays} more ${WHO_STRENGTH_DAYS - week.strengthDays === 1 ? 'day' : 'days'} would meet the muscle-strengthening guideline.`,
       evidence: ['bull2020', 'garber2011'],
     });
   }

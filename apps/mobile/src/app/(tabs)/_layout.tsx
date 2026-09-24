@@ -9,6 +9,10 @@ export default function TabsLayout() {
 
   return (
     <NativeTabs tintColor={colors.accent}>
+      <NativeTabs.Trigger name="today">
+        <NativeTabs.Trigger.Icon sf="sun.max" />
+        <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="overview">
         <NativeTabs.Trigger.Icon sf="waveform.path.ecg" />
         <NativeTabs.Trigger.Label>Overview</NativeTabs.Trigger.Label>
