@@ -1,5 +1,4 @@
 data/
-legacy/
 pnpm-lock.yaml
 apps/mobile/ios/
 apps/mobile/android/

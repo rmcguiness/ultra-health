@@ -22,11 +22,15 @@ In scope:
 
 Out of scope:
 
-- `legacy/web-prototype`: an archived, local-only Next.js viewer. It is not deployed, is
-  not maintained, and has known outdated dependencies. Do not run it on a network-facing
-  host.
 - Vulnerabilities in third-party dependencies with no demonstrated impact on this app
   (please report those upstream; Dependabot tracks updates here).
+
+## Known dependency advisories
+
+- `node-forge` (GHSA-86w9-cpqp-85rv): pulled in only by Expo's CLI (`@expo/cli` and
+  `@expo/code-signing-certificates`) for EAS Update code signing. It is not part of the app
+  bundle that ships to phones. No patched release exists yet (every published version is
+  affected), so it stays open until node-forge or Expo ships a fix.
 
 ## Personal health data
 
