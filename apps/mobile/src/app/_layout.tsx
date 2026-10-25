@@ -11,6 +11,7 @@ import { useGoalStore } from '@/features/goal/store';
 import { logger } from '@/logger';
 import { eraseLocalData, getServices } from '@/services';
 import { Button } from '@/ui/components/Button';
+import { loadSkia } from '@/ui/loadSkia';
 import { Text } from '@/ui/components/Text';
 import { colors, spacing } from '@/ui/theme';
 
@@ -31,7 +32,7 @@ function DatabaseGate({ children }: PropsWithChildren) {
   const { status, error, refetch } = useQuery({
     queryKey: ['database'],
     queryFn: async () => {
-      await Promise.all([getServices(), useGoalStore.getState().load()]);
+      await Promise.all([getServices(), useGoalStore.getState().load(), loadSkia()]);
       return true;
     },
   });

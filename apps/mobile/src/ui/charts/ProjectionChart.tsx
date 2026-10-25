@@ -11,6 +11,24 @@ import { niceTicks } from './model';
 const Y_GUTTER = 36;
 const H = 120;
 
+function describeProjection(
+  history: readonly FitnessFatiguePoint[],
+  projection: readonly FitnessFatiguePoint[],
+): string {
+  const now = history[history.length - 1];
+  const end = projection[projection.length - 1];
+  if (!now) return 'Fitness and fatigue chart: no workouts with heart rate yet.';
+  const parts = [
+    `Fitness and fatigue. Today: fitness ${Math.round(now.fitness)}, fatigue ${Math.round(now.fatigue)}.`,
+  ];
+  if (end) {
+    parts.push(
+      `If the plan is followed: fitness ${Math.round(end.fitness)}, fatigue ${Math.round(end.fatigue)} in ${projection.length} days.`,
+    );
+  }
+  return parts.join(' ');
+}
+
 /**
  * Fitness and fatigue: the last weeks as measured (solid), then the plan as
  * projected (dashed), with today marked.
@@ -69,7 +87,13 @@ export function ProjectionChart({
   }, [history, projection, plotW]);
 
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height: H + 18 }}>
+    <View
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      style={{ height: H + 18 }}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={describeProjection(history, projection)}
+    >
       {width > 0 ? (
         <>
           <Canvas style={{ width: plotW, height: H }}>

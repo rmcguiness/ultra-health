@@ -5,11 +5,35 @@ into interpretable, evidence-based trends. It judges every metric against **your
 baseline**, keeps **device provenance** on every reading, and never blends measurements that
 aren't comparable.
 
-> **Status:** early, personal project under active development. iOS only for now.
+> **Status:** early-stage personal project under active development. It runs on iOS as a
+> personal-device build (installed from Xcode with a developer account). It is **not on the
+> App Store**, there is no TestFlight, and APIs, screens and the database schema still change.
 >
 > **Not medical advice.** Ultra Health is not a medical device and is not intended to
 > diagnose, treat or prevent any condition. Talk to a clinician about anything that worries
 > you.
+
+## Screenshots
+
+All values below are **generated demo data**, not anyone's health records (note the "Demo
+data" pill on every screen). They are the real app screens and analytics, rendered in a
+browser through react-native-web from a seeded synthetic dataset, and captured automatically
+with `pnpm --filter @ultra-health/mobile screenshots`.
+
+|                                                                             Today                                                                              |                                                                 Trends                                                                  |                                                                       Overview                                                                       |                                                                HRV detail                                                                 |                                                                   Data                                                                    |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------: |
+| <img src="docs/screenshots/today.webp" width="160" alt="Today screen with the day's planned session, a raised resting heart rate warning and goal progress" /> | <img src="docs/screenshots/trends.webp" width="160" alt="Trends screen grouping recovery, fitness and body trends over three months" /> | <img src="docs/screenshots/overview.webp" width="160" alt="Overview screen with sleep stages, resting heart rate and HRV charts against baseline" /> | <img src="docs/screenshots/metric-hrv.webp" width="160" alt="HRV detail chart with daily values, a 7-day average and the normal range" /> | <img src="docs/screenshots/data.webp" width="160" alt="Data screen listing records per simulated source: Apple Watch, Whoop and scale" /> |
+
+What they do and don't show:
+
+- **Dark mode only.** The app ships dark-only today (see [ROADMAP.md](ROADMAP.md)).
+- **The web tab bar differs from iOS.** On iOS the tabs are native and sit at the bottom, and
+  include Settings. Native sheets, haptics and HealthKit permission prompts don't exist on
+  the web build.
+- The dataset is 120 days from three simulated sources (Apple Watch, Whoop, a smart scale,
+  plus manual tape measurements), with a simulated illness, a week without weigh-ins, a few
+  short nights and a hard training block in the last five days. That is why Today says
+  "Resting HR raised".
 
 ## Repository layout
 
@@ -83,6 +107,32 @@ Requirements: Node 22.12+ (`nvm use`), pnpm 10, Xcode 26 with the iOS platform i
 pnpm install
 pnpm check                       # prettier + typecheck + lint + tests
 ```
+
+### Demo mode (no iPhone, no HealthKit)
+
+A deterministic synthetic dataset (`apps/mobile/src/demo/generate.ts`, seeded RNG) drives a
+demo mode that needs no HealthKit and no personal data. It runs the real pipeline: in-memory
+SQLite, the sync engine, the analytics and the charts. Every screen shows a "Demo data" pill.
+
+```bash
+cd apps/mobile
+pnpm web                                         # dev server in the browser, demo mode
+EXPO_PUBLIC_DEMO_DATE=2026-10-20 pnpm web:export  # static build in dist-web/ (fixed "today")
+```
+
+Setting `EXPO_PUBLIC_DEMO=1` for a native development build should also switch to demo
+mode, but so far demo mode has only been exercised on the web. The web build is a development
+and review aid, not a supported product. To regenerate the
+screenshots, install Playwright once (`npx playwright install chromium`, plus the package in
+any directory you point `PLAYWRIGHT_MODULE` at) and run:
+
+```bash
+EXPO_PUBLIC_DEMO_DATE=2026-10-20 pnpm web:export
+PLAYWRIGHT_MODULE=/path/to/node_modules/playwright pnpm screenshots   # writes docs/screenshots/*.webp
+```
+
+The same generator feeds the tests (`src/demo/generate.test.ts`), so the screenshots and the
+test suite exercise the same data.
 
 ### Simulator (synthetic data)
 
@@ -174,30 +224,17 @@ which is git-ignored and never leaves your machine.
 
 ## Roadmap
 
-1. **Visuals** for the analytics: adaptation timeline, recovery compass, sleep barcode,
-   scorecard and today's plan.
-2. **Background delivery** (HealthKit observer queries) so data is fresh before you open the
-   app.
-3. **Whoop API integration.** HRV (RMSSD), Recovery and Strain aren't written to HealthKit.
-   Whoop's OAuth token exchange and refresh require the client secret, which can't ship in the
-   app, so a small token broker (e.g. a Supabase Edge Function) holds it. Health data still
-   flows Whoop → phone directly.
-4. **Personal models**: fitted fitness–fatigue constants and water coefficients, plus a
-   prediction log that scores every forecast.
-5. **Nutrition**: intake as an input to the weight model (see docs/algorithms.md).
-6. **Scale vendor API** for metrics HealthKit can't store (visceral fat, muscle mass, body
-   water).
-7. **Android** via Health Connect, as a second `HealthDataSource` adapter.
+See [ROADMAP.md](ROADMAP.md): the Whoop API, the remaining visuals and guidance features,
+light mode, and the App Store launch checklist.
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR:
-
-1. Read [CLAUDE.md](CLAUDE.md) for the rules that are easy to break (never log health
-   values, never blend sources, gaps are not zeros, append-only migrations).
-2. Run `pnpm check` and make sure it passes. CI runs the same command.
-3. Never commit real health data, exports, screenshots containing personal values, or
-   secrets. Use the simulator seed data or synthetic fixtures.
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, and
+[CLAUDE.md](CLAUDE.md) for the rules that are easy to break (never log health values, never
+blend sources, gaps are not zeros, append-only migrations). Run `pnpm check` before opening a
+PR; CI runs the same command. **Never commit real health data**, exports, screenshots of real
+values, or secrets; use demo mode or synthetic fixtures. This project follows a
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 

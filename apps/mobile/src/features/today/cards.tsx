@@ -140,7 +140,7 @@ export function PlanHero({ outlook }: { outlook: O }) {
           </Text>
           <Text variant="caption" tone="secondary" style={styles.flexRight}>
             {band
-              ? `${ms(band.recent)} ms (${ms(band.lower)}–${ms(band.upper)})`
+              ? `HRV ${ms(band.recent)} ms (${ms(band.lower)}–${ms(band.upper)})`
               : 'Needs 3 HRV readings a week'}
           </Text>
           <Chevron />

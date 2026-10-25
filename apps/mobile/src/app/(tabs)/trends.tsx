@@ -22,6 +22,7 @@ import { Chevron, Disclosure } from '@/ui/components/Blocks';
 import { Card } from '@/ui/components/Card';
 import { CardHeader, InfoButton } from '@/ui/components/CardHeader';
 import { Screen } from '@/ui/components/Screen';
+import { EmptyCard, ErrorCard, LoadingCard } from '@/ui/components/StateCard';
 import { Text } from '@/ui/components/Text';
 import { colors, radii, spacing } from '@/ui/theme';
 
@@ -52,7 +53,7 @@ function quadrant(p: CompassPoint | undefined): string {
 export default function Trends() {
   const [rangeId, setRangeId] = useState<TrendRange>('3M');
   const range = RANGES.find((r) => r.id === rangeId)!;
-  const { data, error, isPending } = useTimeline(range.days);
+  const { data, error, isPending, refetch } = useTimeline(range.days);
 
   const model = useMemo(
     () => (data ? timelineModel(data.inputs, data.days, data.from, data.to, rangeId) : undefined),
@@ -127,15 +128,20 @@ export default function Trends() {
       </View>
 
       {!model || !data ? (
-        <Card>
-          <Text tone={error ? 'negative' : 'secondary'}>
-            {error
-              ? `Analysis failed: ${error.message}`
-              : isPending
-                ? 'Analyzing your history…'
-                : 'No data yet.'}
-          </Text>
-        </Card>
+        error ? (
+          <ErrorCard
+            title="Could not analyze your history"
+            message={`${error.message} Your data is unchanged.`}
+            onRetry={() => void refetch()}
+          />
+        ) : isPending ? (
+          <LoadingCard label="Analyzing your history…" lines={5} />
+        ) : (
+          <EmptyCard
+            title="No history yet"
+            message="Trends need a few weeks of data from Apple Health. They fill in as you sync."
+          />
+        )
       ) : (
         <>
           <Card>

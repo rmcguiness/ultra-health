@@ -1,8 +1,9 @@
 import type { PropsWithChildren, ReactElement } from 'react';
-import { ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme';
+import { DemoBanner } from './DemoBanner';
 import { Text } from './Text';
 
 interface ScreenProps extends PropsWithChildren {
@@ -27,6 +28,7 @@ export function Screen({
         refreshControl={refreshControl}
         contentInsetAdjustmentBehavior="automatic"
       >
+        <DemoBanner />
         {title ? (
           <View style={styles.header}>
             <Text variant="largeTitle" accessibilityRole="header">
@@ -47,6 +49,12 @@ export function Screen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.md,
+    paddingBottom: spacing.xxl,
+    // On the web the tab bar floats over the top of the page.
+    ...(Platform.OS === 'web' ? { paddingTop: 76 } : null),
+  },
   header: { gap: spacing.xs, marginBottom: spacing.sm },
 });

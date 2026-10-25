@@ -1,0 +1,49 @@
+name: Bug report
+description: Something in the app or the code doesn't work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste real health data** (values, exports or screenshots of your own records).
+        Reproduce with demo mode if you can. Security problems go through
+        [private reporting](https://github.com/rmcguiness/ultra-health/security/advisories/new), not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Trends
+        2. Tap ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - iPhone (personal-device build)
+        - iOS Simulator
+        - Web demo
+        - Tests / tooling
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: e.g. main @ abc1234, iOS 26.1, iPhone 16
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: This report contains no real health data, exports or personal screenshots.
+          required: true

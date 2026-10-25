@@ -14,8 +14,9 @@ import {
 } from '@/features/today/cards';
 import { useSyncStore } from '@/sync/store';
 import { formatDay } from '@/ui/charts/model';
-import { Card } from '@/ui/components/Card';
+import { Appear } from '@/ui/components/Appear';
 import { Screen } from '@/ui/components/Screen';
+import { EmptyCard, ErrorCard, LoadingCard } from '@/ui/components/StateCard';
 import { SyncStatus } from '@/ui/components/SyncStatus';
 import { Text } from '@/ui/components/Text';
 import { colors, spacing } from '@/ui/theme';
@@ -28,7 +29,7 @@ import { colors, spacing } from '@/ui/theme';
  */
 export default function Today() {
   const { status, sync } = useSyncStore();
-  const { data: outlook, error, isPending } = useOutlook();
+  const { data: outlook, error, isPending, refetch } = useOutlook();
   const date = today();
   const later = outlook ? comingLater(outlook) : [];
 
@@ -48,12 +49,24 @@ export default function Today() {
       {outlook ? (
         <>
           <Alerts outlook={outlook} />
-          <PlanHero outlook={outlook} />
-          {outlook.progress ? <ProgressCard progress={outlook.progress} /> : <SetGoalCard />}
-          <WeekCard outlook={outlook} />
-          <ScorecardCard outlook={outlook} />
-          <ForecastCard outlook={outlook} />
-          <WhatWorkedCard outlook={outlook} />
+          <Appear index={0}>
+            <PlanHero outlook={outlook} />
+          </Appear>
+          <Appear index={1}>
+            {outlook.progress ? <ProgressCard progress={outlook.progress} /> : <SetGoalCard />}
+          </Appear>
+          <Appear index={2}>
+            <WeekCard outlook={outlook} />
+          </Appear>
+          <Appear index={3}>
+            <ScorecardCard outlook={outlook} />
+          </Appear>
+          <Appear index={4}>
+            <ForecastCard outlook={outlook} />
+          </Appear>
+          <Appear index={5}>
+            <WhatWorkedCard outlook={outlook} />
+          </Appear>
           <View style={styles.footer}>
             {later.map((line) => (
               <Text key={line} variant="caption" tone="tertiary">
@@ -66,24 +79,24 @@ export default function Today() {
             </Text>
           </View>
         </>
+      ) : error ? (
+        <ErrorCard
+          title="Could not analyze your data"
+          message={`${error.message} Your data is unchanged; this only affects today's view.`}
+          onRetry={() => void refetch()}
+        />
+      ) : isPending ? (
+        <LoadingCard label="Analyzing your data…" lines={4} />
       ) : (
-        <Card>
-          <View style={styles.center}>
-            <Text tone={error ? 'negative' : 'secondary'}>
-              {error
-                ? `Analysis failed: ${error.message}`
-                : isPending
-                  ? 'Analyzing your data…'
-                  : 'No analysis yet.'}
-            </Text>
-          </View>
-        </Card>
+        <EmptyCard
+          title="Nothing to analyze yet"
+          message="Once Apple Health has a few days of heart rate, sleep or workouts, today's plan appears here. Pull down to sync."
+        />
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { alignItems: 'center', paddingVertical: spacing.lg },
   footer: { gap: spacing.sm, marginTop: spacing.sm },
 });
