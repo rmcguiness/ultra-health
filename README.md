@@ -41,7 +41,6 @@ What they do and don't show:
 apps/mobile/        Expo (SDK 57) iOS app: HealthKit ingest, encrypted local store, UI
 packages/core/      Platform-agnostic domain model: metric catalog, source provenance,
                     DST-safe local dates, statistics, baseline comparison
-legacy/web-prototype/  Original Next.js viewer for the Health XML export (archived)
 data/               Local-only personal exports (git-ignored, never commit)
 ```
 
