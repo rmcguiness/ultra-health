@@ -5,6 +5,12 @@ into interpretable, evidence-based trends. It judges every metric against **your
 baseline**, keeps **device provenance** on every reading, and never blends measurements that
 aren't comparable.
 
+> **Status:** early, personal project under active development. iOS only for now.
+>
+> **Not medical advice.** Ultra Health is not a medical device and is not intended to
+> diagnose, treat or prevent any condition. Talk to a clinician about anything that worries
+> you.
+
 ## Repository layout
 
 ```
@@ -65,6 +71,9 @@ HealthKit ──► HealthDataSource (port) ──► SyncEngine ──► SQLCi
   are never logged (`src/logger.ts`).
 - Only whitelisted scalar metadata is stored (motion context, VO₂ test type, algorithm
   version, time zone).
+- **No personal data in this repository.** Health exports, back-test output and snapshots
+  live in the git-ignored `data/` directory and are never committed. Test fixtures are
+  synthetic. CI runs a gitleaks secret scan on every push and pull request.
 
 ## Getting started
 
@@ -180,3 +189,21 @@ which is git-ignored and never leaves your machine.
 6. **Scale vendor API** for metrics HealthKit can't store (visceral fat, muscle mass, body
    water).
 7. **Android** via Health Connect, as a second `HealthDataSource` adapter.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR:
+
+1. Read [CLAUDE.md](CLAUDE.md) for the rules that are easy to break (never log health
+   values, never blend sources, gaps are not zeros, append-only migrations).
+2. Run `pnpm check` and make sure it passes. CI runs the same command.
+3. Never commit real health data, exports, screenshots containing personal values, or
+   secrets. Use the simulator seed data or synthetic fixtures.
+
+## Security
+
+Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE) © 2026 Ryan McGuiness

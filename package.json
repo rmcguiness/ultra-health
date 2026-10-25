@@ -15,5 +15,12 @@
   },
   "devDependencies": {
     "prettier": "^3.6.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "source-map-js": "^1.2.2",
+      "shell-quote": "^1.11.0",
+      "@vitest/mocker": "^5.0.3"
+    }
   }
 }

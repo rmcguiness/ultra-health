@@ -30,3 +30,28 @@ coverage/
 # OS / editor
 .DS_Store
 .cursor/
+
+# Additional health-export and local-data safety nets
+export-health-data/
+apple_health_export/
+electrocardiograms/
+clinical-records/
+workout-routes/
+*.gpx
+*.fhir.json
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.realm
+
+# More secret material
+.env.*
+!.env.example
+*.keystore
+*.cer
+*.certSigningRequest
+google-services.json
+GoogleService-Info.plist
+npm-debug.log*

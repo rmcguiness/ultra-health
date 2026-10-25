@@ -42,54 +42,11 @@ export async function parseHealthXMLStreaming(
 			normalize: true,
 		});
 
-		// #region agent log
-		fetch('http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				location: 'xmlParser.ts:35',
-				message: 'Parser initialized',
-				data: { filePath, fileSize },
-				timestamp: Date.now(),
-				sessionId: 'debug-session',
-				runId: 'run1',
-				hypothesisId: 'C',
-			}),
-		}).catch(() => {});
-		// #endregion
 
 		saxStream.on('opentag', (node: any) => {
 			currentElement = node.name;
 			tagCount++;
 
-			// #region agent log
-			if (
-				tagCount <= 20 ||
-				node.name.toLowerCase().includes('record') ||
-				node.name.toLowerCase().includes('workout')
-			) {
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:42',
-							message: 'opentag event',
-							data: {
-								tagName: node.name,
-								tagCount,
-								attributes: Object.keys(node.attributes || {}).slice(0, 5),
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'A',
-						}),
-					}
-				).catch(() => {});
-			}
-			// #endregion
 
 			if (node.name === 'Record' || node.name === 'record') {
 				currentRecord = {};
@@ -98,29 +55,6 @@ export async function parseHealthXMLStreaming(
 					currentRecord[key] = node.attributes[key];
 				});
 
-				// #region agent log
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:50',
-							message: 'Record opened',
-							data: {
-								attributes: Object.keys(currentRecord),
-								sampleAttrs: Object.fromEntries(
-									Object.entries(currentRecord).slice(0, 3)
-								),
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'B',
-						}),
-					}
-				).catch(() => {});
-				// #endregion
 			} else if (node.name === 'Workout' || node.name === 'workout') {
 				currentWorkout = {};
 				// Copy all attributes
@@ -128,60 +62,10 @@ export async function parseHealthXMLStreaming(
 					currentWorkout[key] = node.attributes[key];
 				});
 
-				// #region agent log
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:57',
-							message: 'Workout opened',
-							data: {
-								attributes: Object.keys(currentWorkout),
-								sampleAttrs: Object.fromEntries(
-									Object.entries(currentWorkout).slice(0, 3)
-								),
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'B',
-						}),
-					}
-				).catch(() => {});
-				// #endregion
 			}
 		});
 
 		saxStream.on('closetag', (tagName: string) => {
-			// #region agent log
-			if (
-				tagName.toLowerCase().includes('record') ||
-				tagName.toLowerCase().includes('workout')
-			) {
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:60',
-							message: 'closetag event',
-							data: {
-								tagName,
-								hasCurrentRecord: !!currentRecord,
-								hasCurrentWorkout: !!currentWorkout,
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'A',
-						}),
-					}
-				).catch(() => {});
-			}
-			// #endregion
 
 			if ((tagName === 'Record' || tagName === 'record') && currentRecord) {
 				const healthRecord: HealthRecord = {
@@ -196,28 +80,6 @@ export async function parseHealthXMLStreaming(
 					creationDate: currentRecord.creationDate,
 				};
 
-				// #region agent log
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:74',
-							message: 'Processing record',
-							data: {
-								type: healthRecord.type,
-								startDate: healthRecord.startDate,
-								hasStartDate: !!healthRecord.startDate,
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'B',
-						}),
-					}
-				).catch(() => {});
-				// #endregion
 
 				if (healthRecord.startDate) {
 					const type = healthRecord.type;
@@ -233,27 +95,6 @@ export async function parseHealthXMLStreaming(
 						metrics.distanceWalkingRunning.push(healthRecord);
 					}
 				} else {
-					// #region agent log
-					fetch(
-						'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-						{
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({
-								location: 'xmlParser.ts:87',
-								message: 'Record skipped - no startDate',
-								data: {
-									type: healthRecord.type,
-									currentRecordKeys: Object.keys(currentRecord),
-								},
-								timestamp: Date.now(),
-								sessionId: 'debug-session',
-								runId: 'run1',
-								hypothesisId: 'B',
-							}),
-						}
-					).catch(() => {});
-					// #endregion
 				}
 
 				currentRecord = null;
@@ -285,28 +126,6 @@ export async function parseHealthXMLStreaming(
 					duration: parseFloat(currentWorkout.duration || '0'),
 				};
 
-				// #region agent log
-				fetch(
-					'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-					{
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							location: 'xmlParser.ts:118',
-							message: 'Processing workout',
-							data: {
-								startDate: workoutRecord.startDate,
-								hasStartDate: !!workoutRecord.startDate,
-								currentWorkoutKeys: Object.keys(currentWorkout),
-							},
-							timestamp: Date.now(),
-							sessionId: 'debug-session',
-							runId: 'run1',
-							hypothesisId: 'B',
-						}),
-					}
-				).catch(() => {});
-				// #endregion
 
 				if (workoutRecord.startDate) {
 					metrics.workouts.push(workoutRecord);
@@ -322,55 +141,10 @@ export async function parseHealthXMLStreaming(
 		});
 
 		saxStream.on('error', (err: Error) => {
-			// #region agent log
-			fetch(
-				'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-				{
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						location: 'xmlParser.ts:131',
-						message: 'SAX parser error',
-						data: { error: err.message, stack: err.stack?.substring(0, 200) },
-						timestamp: Date.now(),
-						sessionId: 'debug-session',
-						runId: 'run1',
-						hypothesisId: 'D',
-					}),
-				}
-			).catch(() => {});
-			// #endregion
 			reject(err);
 		});
 
 		saxStream.on('end', () => {
-			// #region agent log
-			fetch(
-				'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-				{
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						location: 'xmlParser.ts:135',
-						message: 'Parsing ended',
-						data: {
-							recordCount,
-							workoutCount,
-							tagCount,
-							metricsSummary: {
-								steps: metrics.steps.length,
-								heartRate: metrics.heartRate.length,
-								workouts: metrics.workouts.length,
-							},
-						},
-						timestamp: Date.now(),
-						sessionId: 'debug-session',
-						runId: 'run1',
-						hypothesisId: 'C',
-					}),
-				}
-			).catch(() => {});
-			// #endregion
 			console.log(
 				`Parsing complete: ${recordCount} records, ${workoutCount} workouts`
 			);
@@ -394,24 +168,6 @@ export async function parseHealthXMLStreaming(
 		});
 
 		fileStream.on('error', (err: Error) => {
-			// #region agent log
-			fetch(
-				'http://127.0.0.1:7242/ingest/076997dd-319d-4ffe-b87f-fbe04c123a51',
-				{
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						location: 'xmlParser.ts:158',
-						message: 'File stream error',
-						data: { error: err.message },
-						timestamp: Date.now(),
-						sessionId: 'debug-session',
-						runId: 'run1',
-						hypothesisId: 'D',
-					}),
-				}
-			).catch(() => {});
-			// #endregion
 			reject(err);
 		});
 

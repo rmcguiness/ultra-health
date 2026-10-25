@@ -1,5 +1,9 @@
 > **Archived.** Superseded by `apps/mobile`. It expects the export at `./apple_health_export`,
 > which now lives in `/data`. Kept for reference (XML streaming parser in `lib/parsers`).
+>
+> **Local only.** Its API routes serve raw health data with no authentication. The scripts bind
+> to 127.0.0.1; never deploy it or expose it on a network. Its dependencies are outdated and
+> are not maintained.
 
 # Health Data Dashboard
 
