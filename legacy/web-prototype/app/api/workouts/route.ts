@@ -23,6 +23,10 @@ export async function GET(request: Request) {
 
 		if (filename) {
 			// Return specific workout route
+			// Only accept a bare file name inside WORKOUT_ROUTES_DIR (no path traversal).
+			if (path.basename(filename) !== filename || !filename.endsWith('.gpx')) {
+				return NextResponse.json({ error: 'Invalid file name' }, { status: 400 });
+			}
 			const filePath = path.join(WORKOUT_ROUTES_DIR, filename);
 			if (!fs.existsSync(filePath)) {
 				return NextResponse.json(
@@ -46,7 +50,7 @@ export async function GET(request: Request) {
 	} catch (error: any) {
 		console.error('Error reading workout routes:', error);
 		return NextResponse.json(
-			{ error: error.message || 'Failed to read workout routes' },
+			{ error: 'Unable to load data' },
 			{ status: 500 }
 		);
 	}

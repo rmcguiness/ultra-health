@@ -19,6 +19,10 @@ export async function GET(request: Request) {
 
     if (filename) {
       // Return specific ECG file
+      // Only accept a bare file name inside ECG_DIR (no path traversal).
+      if (path.basename(filename) !== filename || !filename.endsWith('.csv')) {
+      	return NextResponse.json({ error: 'Invalid file name' }, { status: 400 });
+      }
       const filePath = path.join(ECG_DIR, filename);
       if (!fs.existsSync(filePath)) {
         return NextResponse.json(
@@ -41,7 +45,7 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error('Error reading ECG data:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to read ECG data' },
+      { error: 'Unable to load data' },
       { status: 500 }
     );
   }

@@ -19,7 +19,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('Error reading clinical records:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to read clinical records' },
+      { error: 'Unable to load data' },
       { status: 500 }
     );
   }
