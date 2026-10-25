@@ -2,6 +2,7 @@ import { METRIC_IDS, METRICS, type MetricCategory, type MetricId } from '@ultra-
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { DEMO_MODE } from '@/demo/mode';
 import type { RecordInventoryRow, SampleInventoryRow } from '@/db/queries';
 import { useInventory, useStreamStates } from '@/features/queries';
 import { Card } from '@/ui/components/Card';
@@ -49,7 +50,14 @@ export default function Data() {
   const dailyByMetric = new Map((inventory?.daily ?? []).map((row) => [row.metric, row]));
 
   return (
-    <Screen title="Data" subtitle="What has been imported from Apple Health, by source">
+    <Screen
+      title="Data"
+      subtitle={
+        DEMO_MODE
+          ? 'Generated demo records, by simulated source'
+          : 'What has been imported from Apple Health, by source'
+      }
+    >
       <SyncStatus />
 
       {failures.length > 0 ? (

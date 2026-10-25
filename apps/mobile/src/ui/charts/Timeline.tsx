@@ -67,7 +67,12 @@ export function Timeline({ model, selected, onSelect }: TimelineProps) {
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       {width > 0 ? (
         <GestureDetector gesture={gesture}>
-          <View>
+          <View
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Timeline of training state, training load and recovery over ${model.days} days.`}
+            accessibilityHint="Tap or drag across it to pick a day; that day is described below."
+          >
             <Lane title="Training state" legend={<StateKeys states={model.states} />}>
               <Ribbon model={model} width={plotW} sx={sx} dayW={dayW} />
             </Lane>

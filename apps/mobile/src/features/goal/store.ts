@@ -2,6 +2,8 @@ import { parseGoal, type Goal } from '@ultra-health/core';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
+import { demoGoal } from '@/demo/goal';
+import { DEMO_MODE } from '@/demo/mode';
 import { logger } from '@/logger';
 
 /**
@@ -31,8 +33,36 @@ interface GoalStore {
   clear: () => Promise<void>;
 }
 
+interface GoalStorage {
+  read(): Promise<string | null>;
+  write(value: string): Promise<void>;
+  remove(): Promise<void>;
+}
+
+const keychain: GoalStorage = {
+  read: () => SecureStore.getItemAsync(KEY, KEYCHAIN_OPTIONS),
+  write: (value) => SecureStore.setItemAsync(KEY, value, KEYCHAIN_OPTIONS),
+  remove: () => SecureStore.deleteItemAsync(KEY, KEYCHAIN_OPTIONS),
+};
+
+/** Demo mode keeps the goal in memory, starting from the demo person's goal. */
+function memoryStorage(): GoalStorage {
+  let value: string | null = JSON.stringify({ goal: demoGoal() });
+  return {
+    read: async () => value,
+    write: async (next) => {
+      value = next;
+    },
+    remove: async () => {
+      value = null;
+    },
+  };
+}
+
+const storage = DEMO_MODE ? memoryStorage() : keychain;
+
 async function write(stored: Stored): Promise<void> {
-  await SecureStore.setItemAsync(KEY, JSON.stringify(stored), KEYCHAIN_OPTIONS);
+  await storage.write(JSON.stringify(stored));
 }
 
 export const useGoalStore = create<GoalStore>((set, get) => ({
@@ -43,7 +73,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
   async load() {
     if (get().status === 'ready') return;
     try {
-      const raw = await SecureStore.getItemAsync(KEY, KEYCHAIN_OPTIONS);
+      const raw = await storage.read();
       const stored = raw ? (JSON.parse(raw) as Stored) : {};
       set({ status: 'ready', goal: parseGoal(stored.goal), skipped: stored.skipped === true });
     } catch (error) {
@@ -65,7 +95,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
   },
 
   async clear() {
-    await SecureStore.deleteItemAsync(KEY, KEYCHAIN_OPTIONS);
+    await storage.remove();
     set({ status: 'ready', goal: undefined, skipped: false });
   },
 }));

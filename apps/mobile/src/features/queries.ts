@@ -27,6 +27,7 @@ import {
   type SleepNight,
 } from '@/db/queries';
 import { listStreamStates } from '@/db/syncState';
+import { DEMO_DATE } from '@/demo/mode';
 import { snapshotDate } from '@/dev/snapshot';
 import { getServices } from '@/services';
 import {
@@ -53,7 +54,7 @@ const minDate = (a: LocalDate, b: LocalDate) => (a < b ? a : b);
 
 /** The local date, or a loaded simulator snapshot's last day. */
 export function today(): LocalDate {
-  return snapshotDate() ?? localDateKey(Date.now());
+  return snapshotDate() ?? DEMO_DATE ?? localDateKey(Date.now());
 }
 
 export function useInventory() {
