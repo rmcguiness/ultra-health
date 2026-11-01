@@ -59,7 +59,7 @@
     "better-sqlite3": "^13.0.3",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.2",
-    "typescript": "~6.0.3",
+    "typescript": "~7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   }
