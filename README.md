@@ -134,6 +134,11 @@ PLAYWRIGHT_MODULE=/path/to/node_modules/playwright pnpm screenshots   # writes d
 The same generator feeds the tests (`src/demo/generate.test.ts`), so the screenshots and the
 test suite exercise the same data.
 
+**PR previews.** A Vercel project (root directory `apps/mobile`, settings in
+`apps/mobile/vercel.json`) builds this web demo for every pull request, so changes can be
+reviewed in a browser. Previews use generated demo data only and sit behind Vercel's
+deployment protection; they are not a public demo.
+
 ### Simulator (synthetic data)
 
 ```bash
